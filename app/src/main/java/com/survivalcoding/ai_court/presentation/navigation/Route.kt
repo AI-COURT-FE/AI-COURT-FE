@@ -1,9 +1,10 @@
 package com.survivalcoding.ai_court.presentation.navigation
 
-sealed class Route(
-    val route: String
-){
-    data object Home: Route(route= "home")
-    data object Diary: Route(route= "diary")
-    data object My: Route(route= "my")
+sealed class Route(val route: String) {
+    data object Entry : Route("entry")
+    data object Chat : Route("chat/{roomCode}/{userId}/{nickname}") {
+        fun createRoute(roomCode: String, userId: String, nickname: String): String {
+            return "chat/$roomCode/$userId/$nickname"
+        }
+    }
 }

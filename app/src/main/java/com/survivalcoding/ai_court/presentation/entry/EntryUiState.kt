@@ -1,0 +1,18 @@
+package com.survivalcoding.ai_court.presentation.entry
+
+data class EntryUiState(
+    val nickname: String = "",
+    val roomCode: String = "",
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val createdRoomCode: String? = null,
+    val isWaitingForOpponent: Boolean = false,
+    val navigateToChat: NavigateToChatEvent? = null
+)
+
+data class NavigateToChatEvent(
+    val roomCode: String,
+    val userId: String,
+    val nickname: String
+)
+
