@@ -1,16 +1,25 @@
 package com.survivalcoding.ai_court.presentation.entry.component
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -48,3 +57,22 @@ fun RoomCodeInput(
     )
 }
 
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+private fun RoomCodeInputPreview_Empty() {
+    MaterialTheme {
+        var code by remember { mutableStateOf("") }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF1A1A2E))
+                .padding(16.dp)
+        ) {
+            RoomCodeInput(
+                value = code,
+                onValueChange = { code = it }
+            )
+        }
+    }
+}

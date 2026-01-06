@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.survivalcoding.ai_court.domain.model.ChatMessage
@@ -89,3 +90,42 @@ private fun formatTime(timestamp: Long): String {
     return sdf.format(Date(timestamp))
 }
 
+@Preview(showBackground = true)
+@Composable
+fun ChatBubblePrev(){
+    Column {
+        ChatBubble(
+            ChatMessage(
+                "이의잇오",
+                "1234",
+                "01",
+                "ㅁㅁㅁㅁ",
+                "안녕",
+                1700000000000,
+                true
+            )
+        )
+        ChatBubble(
+            ChatMessage(
+                "이의잇오",
+                "1234",
+                "01",
+                "ㅁㅁㅁㅁ",
+                "안녕",
+                1212,
+                false
+            )
+        )
+    }
+}
+/*
+data class ChatMessage(
+    val id: String,
+    val roomCode: String,
+    val senderId: String,
+    val senderNickname: String,
+    val content: String,
+    val timestamp: Long,
+    val isMyMessage: Boolean = false
+)
+ */

@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -181,3 +183,39 @@ private fun ScoreCard(
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun VerdictDialogPreview() {
+    MaterialTheme {
+        val sampleVerdict = Verdict(
+            winner = "A",
+            winnerNickname = "Ayoung",
+            scoreA = 92,
+            scoreB = 78,
+            reason = "증거의 신뢰성과 진술의 일관성을 종합했을 때 User A의 주장이 더 설득력 있다고 판단됩니다.",
+            summary = listOf(
+                "핵심 증거가 User A 주장과 일치",
+                "User B 진술의 일부가 모순됨",
+                "정황상 User A 설명이 더 합리적임"
+            )
+        )
+
+        VerdictDialog(
+            verdict = sampleVerdict,
+            onDismiss = {},
+            onShareResult = {},
+            onGoToMain = {}
+        )
+    }
+}
+
+/*
+data class Verdict(
+    val winner: String,
+    val winnerNickname: String,
+    val scoreA: Int,
+    val scoreB: Int,
+    val reason: String,
+    val summary: List<String> // 3줄 요약
+)
+ */
