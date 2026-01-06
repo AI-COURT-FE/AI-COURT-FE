@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -29,11 +27,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.survivalcoding.ai_court.R
 import com.survivalcoding.ai_court.presentation.chat.ChatViewModel
 import com.survivalcoding.ai_court.presentation.chat.component.ChatBubble
 import com.survivalcoding.ai_court.presentation.chat.component.ChatInput
@@ -112,7 +112,7 @@ fun ChatScreen(
                     )
                 } else {
                     Icon(
-                        imageVector = Icons.Default.Gavel,
+                        painterResource(R.drawable.ic_gavel),
                         contentDescription = "판결 요청"
                     )
                 }
