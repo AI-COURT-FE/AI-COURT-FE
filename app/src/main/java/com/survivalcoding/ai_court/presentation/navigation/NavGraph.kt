@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.survivalcoding.ai_court.presentation.chat.screen.ChatScreen
 import com.survivalcoding.ai_court.presentation.entry.screen.EntryScreen
+import com.survivalcoding.ai_court.presentation.join.screen.JoinScreen
 import com.survivalcoding.ai_court.presentation.verdict.screen.VerdictScreen
 import com.survivalcoding.ai_court.presentation.waiting.screen.WaitingScreen
 
@@ -28,7 +29,21 @@ fun CourtNavGraph(
                     navController.navigate(Route.Waiting.createRoute(roomCode)) {
                         popUpTo(Route.Entry.route) { inclusive = true }
                     }
+                },
+                onNavigateToJoin = {
+                    navController.navigate(Route.Join.route)
                 }
+            )
+        }
+
+        composable(route = Route.Join.route) {
+            JoinScreen(
+                onJoinSuccess = { roomCode ->
+                    navController.navigate(Route.Chat.createRoute(roomCode)) {
+                        popUpTo(Route.Join.route) { inclusive = true }
+                    }
+                },
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

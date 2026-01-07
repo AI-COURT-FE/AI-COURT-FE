@@ -88,7 +88,6 @@ fun AI_COURTTheme(
         typography = Typography,
         content = content
     )
-
 }
 
 object AI_COURTTheme{
@@ -97,7 +96,7 @@ object AI_COURTTheme{
         @ReadOnlyComposable
         get() = LocalAICourtColors.current
 
-    val typography: AI_CourtTypography
+    val typography: Boolean
         @Composable
         @ReadOnlyComposable
         get() = LocalAI_CourtTypography.current
