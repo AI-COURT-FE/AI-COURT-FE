@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.survivalcoding.ai_court.ui.theme.AICourtColors
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
 @Composable
@@ -41,17 +40,17 @@ fun NicknameInput(
             )
         },
         singleLine = true,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color(0xFF4ECDC4),
-            unfocusedBorderColor = Color(0xFF3D3D5C),
-            focusedContainerColor = Color(0xFF2D2D44),
-            unfocusedContainerColor = Color(0xFF2D2D44),
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            cursorColor = Color(0xFF4ECDC4)
+            focusedBorderColor = AI_COURTTheme.colors.black,
+            unfocusedBorderColor = AI_COURTTheme.colors.gray900,
+            focusedContainerColor = AI_COURTTheme.colors.softWhite,
+            unfocusedContainerColor = AI_COURTTheme.colors.white,
+            focusedTextColor = AI_COURTTheme.colors.white,
+            unfocusedTextColor = AI_COURTTheme.colors.white,
+            cursorColor = AI_COURTTheme.colors.brown
         ),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
     )
 }
 
