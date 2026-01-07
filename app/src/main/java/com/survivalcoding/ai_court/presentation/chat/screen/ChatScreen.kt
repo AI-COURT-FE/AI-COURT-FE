@@ -29,16 +29,18 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.survivalcoding.ai_court.R
-import com.survivalcoding.ai_court.presentation.chat.ChatViewModel
+import com.survivalcoding.ai_court.domain.model.WinRate
 import com.survivalcoding.ai_court.presentation.chat.component.ChatBubble
 import com.survivalcoding.ai_court.presentation.chat.component.ChatInput
 import com.survivalcoding.ai_court.presentation.chat.component.VerdictDialog
 import com.survivalcoding.ai_court.presentation.chat.component.WinRateHeader
+import com.survivalcoding.ai_court.presentation.chat.viewmodel.ChatViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -192,3 +194,18 @@ fun ChatScreen(
     }
 }
 
+@Preview
+@Composable
+private fun ChatInputPreview() {
+    ChatInput(value = "", onValueChange = {}, onSend = {})
+}
+
+@Preview
+@Composable
+private fun WinRateHeaderPreview() {
+    WinRateHeader(
+        myNickname = "나",
+        opponentNickname = "상대방",
+        winRate = WinRate(50, 50)
+    )
+}

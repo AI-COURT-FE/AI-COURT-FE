@@ -1,4 +1,4 @@
-package com.survivalcoding.ai_court.presentation.chat
+package com.survivalcoding.ai_court.presentation.chat.state
 
 import com.survivalcoding.ai_court.domain.model.ChatMessage
 import com.survivalcoding.ai_court.domain.model.Verdict

@@ -1,7 +1,6 @@
 package com.survivalcoding.ai_court.presentation.entry.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,7 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -28,10 +28,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.survivalcoding.ai_court.core.component.CourtButton
-import com.survivalcoding.ai_court.presentation.entry.EntryViewModel
 import com.survivalcoding.ai_court.presentation.entry.component.NicknameInput
 import com.survivalcoding.ai_court.presentation.entry.component.RoomCodeInput
 import com.survivalcoding.ai_court.presentation.entry.component.WaitingDialog
+import com.survivalcoding.ai_court.presentation.entry.viewmodel.EntryViewModel
 
 @Composable
 fun EntryScreen(
@@ -72,6 +72,7 @@ fun EntryScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -176,6 +177,15 @@ fun EntryScreen(
                 enabled = !uiState.isLoading,
                 containerColor = Color(0xFFFF6B6B)
             )
+
+            // TODO: 배포 전 삭제 - 디버그용 테스트 버튼
+            Spacer(modifier = Modifier.height(24.dp))
+            CourtButton(
+                text = "⚡ 테스트 입장 (DEBUG)",
+                onClick = { viewModel.debugEnterRoom() },
+                containerColor = Color(0xFFFF9800)
+            )
+            Spacer(modifier = Modifier.height(24.dp))
 
             // 에러 메시지
             uiState.errorMessage?.let { error ->

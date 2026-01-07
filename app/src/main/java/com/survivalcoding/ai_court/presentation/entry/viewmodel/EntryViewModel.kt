@@ -1,9 +1,11 @@
-package com.survivalcoding.ai_court.presentation.entry
+package com.survivalcoding.ai_court.presentation.entry.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.survivalcoding.ai_court.core.util.Resource
 import com.survivalcoding.ai_court.domain.repository.RoomRepository
+import com.survivalcoding.ai_court.presentation.entry.state.EntryUiState
+import com.survivalcoding.ai_court.presentation.entry.state.NavigateToChatEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -133,5 +135,17 @@ class EntryViewModel @Inject constructor(
             )
         }
     }
+    fun debugEnterRoom() {
+        _uiState.update {
+            it.copy(
+                navigateToChat = NavigateToChatEvent(
+                    roomCode = "TEST123",
+                    userId = "testUser",
+                    nickname = "테스터"
+                )
+            )
+        }
+    }
+
 }
 

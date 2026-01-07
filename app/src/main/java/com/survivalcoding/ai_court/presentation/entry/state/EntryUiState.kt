@@ -1,4 +1,4 @@
-package com.survivalcoding.ai_court.presentation.entry
+package com.survivalcoding.ai_court.presentation.entry.state
 
 data class EntryUiState(
     val nickname: String = "",
