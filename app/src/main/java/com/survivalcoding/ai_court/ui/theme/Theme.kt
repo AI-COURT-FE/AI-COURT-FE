@@ -1,6 +1,5 @@
 package com.survivalcoding.ai_court.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -11,7 +10,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
     primary = LightBlue,
@@ -98,7 +96,7 @@ object AI_COURTTheme{
         @ReadOnlyComposable
         get() = LocalAICourtColors.current
 
-    val typography: AI_CourtTypography
+    val typography: Boolean
         @Composable
         @ReadOnlyComposable
         get() = LocalAI_CourtTypography.current
