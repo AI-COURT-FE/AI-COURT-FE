@@ -1,9 +1,8 @@
-package com.survivalcoding.ai_court.presentation.waiting.component
+package com.survivalcoding.ai_court.presentation.join.component
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,15 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.survivalcoding.ai_court.R
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
 @Composable
-fun WaitingBox(
-        roomCode: String,
-        onCopyRoomCode: () -> Unit,
-        modifier: Modifier = Modifier) {
+fun JoinInputBox(modifier: Modifier = Modifier) {
     val cardShape = RoundedCornerShape(10.dp)
     val innerShape = RoundedCornerShape(16.dp)
 
@@ -38,7 +35,7 @@ fun WaitingBox(
             .padding(horizontal = 32.dp)
             .height(452.dp)
             .clip(cardShape)
-            .background(color= Color(0xFFEDEDED))
+            .background(Color.White)
     ) {
         Box(
             modifier = Modifier
@@ -84,20 +81,20 @@ fun WaitingBox(
                     .fillMaxWidth()
                     .padding(horizontal = 22.dp)
                     .height(122.dp)
-                    .background(Color(0xFFEDEDED), innerShape)
                     .border(1.dp, Color(0xFFBABABA), innerShape)
+                    .background(Color(0xFFEDEDED), innerShape)
                     .padding(horizontal = 19.dp)
             ) {
                 Column(
-
+                    modifier = Modifier.align(Alignment.CenterStart)
                 ) {
                     Text(
                         text = "사건번호",
                         style = AI_COURTTheme.typography.Caption_regular,
-                        modifier = Modifier.padding(top = 16.dp)
+                        modifier = Modifier.padding(top = 18.dp)
                     )
                     Text(
-                        text = ("$roomCode"),
+                        text = "2024-1234",
                         style = AI_COURTTheme.typography.Title_1,
                         modifier = Modifier.padding(top = 18.dp)
                     )
@@ -108,8 +105,8 @@ fun WaitingBox(
                     contentDescription = "복사하기",
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
+                        .padding(end = 12.dp)
                         .size(52.dp)
-                        .clickable { onCopyRoomCode() }
                 )
             }
 
@@ -142,3 +139,10 @@ fun WaitingBox(
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun WaitingBoxPrev() {
+    AI_COURTTheme {
+        JoinInputBox()
+    }
+}

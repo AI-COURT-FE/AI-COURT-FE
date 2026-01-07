@@ -4,9 +4,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,10 +22,11 @@ import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 @Composable
 fun InfoBanner(modifier: Modifier = Modifier) {
     Row(modifier= Modifier
-        .border(width = 1.dp, color = Color(0xFF8C8C8C), shape = RoundedCornerShape(size = 16.dp))
-        .width(326.dp)
+        .fillMaxWidth()
+        .padding(horizontal = 32.dp)
         .height(83.dp)
-        .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(size = 16.dp)),
+        .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(size = 16.dp))
+        .border(width = 1.dp, color = Color(0xFF8C8C8C), shape = RoundedCornerShape(size = 16.dp)),
         verticalAlignment = Alignment.CenterVertically
     ){
         Image(

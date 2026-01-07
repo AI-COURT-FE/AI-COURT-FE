@@ -1,7 +1,6 @@
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,15 +12,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.survivalcoding.ai_court.R
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
 @Composable
-fun ChatTopBar(
-    roomCode: String,
-    onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier) {
+fun JoinTopBar(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -30,11 +27,11 @@ fun ChatTopBar(
     ) {
 
         Text(
-            text = "법정 \n사건번호 $roomCode",
+            text = "피고출석",
             modifier = Modifier.align(Alignment.Center),
             style = AI_COURTTheme.typography.Body_3,
             color = AI_COURTTheme.colors.white,
-                    textAlign = TextAlign.Center
+            textAlign = TextAlign.Center
         )
 
         // 왼쪽 뒤로가기 아이콘
@@ -46,8 +43,12 @@ fun ChatTopBar(
                 .padding(start = 21.dp)
                 .width(12.dp)
                 .height(24.dp)
-                .clickable { onNavigateBack() }
         )
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun ChatTopBarPrev() {
+    JoinTopBar()
+}
