@@ -7,6 +7,8 @@ sealed class Route(val route: String) {
         fun createRoute(roomCode: String) = "waiting/$roomCode"
     }
 
+    data object Join : Route("join")
+
     data object Chat : Route("chat/{roomCode}") {
         fun createRoute(roomCode: String) = "chat/$roomCode"
     }

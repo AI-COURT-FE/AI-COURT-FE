@@ -37,7 +37,7 @@ fun CourtButton(
     enabled: Boolean = true,
     height: Dp = 54.dp,
     containerColor: Color = AI_COURTTheme.colors.brown,
-    contentColor: Color = AI_COURTTheme.colors.cream,
+    contentColor: Color = AI_COURTTheme.colors.softWhite,
     showShadow: Boolean = true,
     showIcon: Boolean = false,
 ) {
