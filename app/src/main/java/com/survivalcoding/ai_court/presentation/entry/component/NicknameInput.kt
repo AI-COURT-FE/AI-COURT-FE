@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.survivalcoding.ai_court.ui.theme.AICourtColors
+import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
 @Composable
 fun NicknameInput(
@@ -35,7 +37,7 @@ fun NicknameInput(
         placeholder = {
             Text(
                 text = placeholder,
-                color = Color.Gray
+                color = AI_COURTTheme.colors.gray500
             )
         },
         singleLine = true,
