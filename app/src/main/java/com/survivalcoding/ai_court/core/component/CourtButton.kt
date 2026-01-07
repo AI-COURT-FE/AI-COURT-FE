@@ -22,9 +22,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.survivalcoding.ai_court.R
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
@@ -35,6 +35,7 @@ fun CourtButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    height: Dp = 54.dp,
     containerColor: Color = AI_COURTTheme.colors.brown,
     contentColor: Color = AI_COURTTheme.colors.cream,
     showShadow: Boolean = true,
@@ -64,7 +65,7 @@ fun CourtButton(
             onClick = onClick,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(height),
             enabled = enabled,
             shape = shape,
             colors = ButtonDefaults.buttonColors(
@@ -94,8 +95,6 @@ fun CourtButton(
             }
         }
     }
-
-
 }
 
 @Preview(showBackground = true)
