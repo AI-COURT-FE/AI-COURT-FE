@@ -35,7 +35,7 @@ import com.survivalcoding.ai_court.presentation.entry.viewmodel.EntryViewModel
 
 @Composable
 fun EntryScreen(
-    onNavigateToChat: (roomCode: String, userId: String, nickname: String) -> Unit,
+    onNavigateToWaiting: (roomCode: String, userId: String, nickname: String) -> Unit,
     viewModel: EntryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -43,7 +43,7 @@ fun EntryScreen(
     // 네비게이션 이벤트 처리
     LaunchedEffect(uiState.navigateToChat) {
         uiState.navigateToChat?.let { event ->
-            onNavigateToChat(event.roomCode, event.userId, event.nickname)
+            onNavigateToWaiting(event.roomCode, event.userId, event.nickname)
             viewModel.onNavigationHandled()
         }
     }
