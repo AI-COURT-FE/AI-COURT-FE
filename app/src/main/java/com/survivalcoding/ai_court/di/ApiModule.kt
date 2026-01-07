@@ -1,6 +1,6 @@
 package com.survivalcoding.ai_court.di
 
-import com.survivalcoding.ai_court.data.api.RoomApi
+import com.survivalcoding.ai_court.data.api.RoomApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,7 +21,6 @@ object ApiModule {
 
     @Provides
     @Singleton
-    fun provideRoomApi(retrofit: Retrofit): RoomApi =
-        retrofit.create(RoomApi::class.java)
+    fun provideRoomApiService(retrofit: Retrofit): RoomApiService =
+        retrofit.create(RoomApiService::class.java)
 }
-

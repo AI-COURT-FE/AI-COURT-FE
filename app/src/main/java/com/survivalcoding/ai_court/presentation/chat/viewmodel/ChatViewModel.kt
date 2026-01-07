@@ -1,9 +1,10 @@
-package com.survivalcoding.ai_court.presentation.chat
+package com.survivalcoding.ai_court.presentation.chat.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.survivalcoding.ai_court.core.util.Resource
 import com.survivalcoding.ai_court.domain.repository.ChatRepository
+import com.survivalcoding.ai_court.presentation.chat.state.ChatUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

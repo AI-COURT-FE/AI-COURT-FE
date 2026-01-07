@@ -6,6 +6,6 @@ data class Verdict(
     val scoreA: Int,
     val scoreB: Int,
     val reason: String,
-    val summary: List<String> // 3줄 요약
+    val summary: List<String>
 )
 
