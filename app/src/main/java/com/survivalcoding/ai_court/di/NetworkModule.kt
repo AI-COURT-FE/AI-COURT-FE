@@ -41,7 +41,7 @@ object NetworkModule {
         converterFactory: Converter.Factory
     ): Retrofit {
         val baseUrl = BuildConfig.BASE_URL ?: "http://10.0.2.2:8080/"
-
+        android.util.Log.d("BASE_URL", "BASE_URL=${BuildConfig.BASE_URL}")
         return Retrofit.Builder()
             .baseUrl(baseUrl)
             .client(client)

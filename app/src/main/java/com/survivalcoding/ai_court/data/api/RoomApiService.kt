@@ -26,7 +26,7 @@ interface RoomApiService {
     @POST("verdict")
     suspend fun requestVerdict(@Body request: VerdictRequest): Response<VerdictResponse>
 
-    @POST("verdict")
+    @POST("verdict/final")
     suspend fun requestFinalVerdict(
         @Body request: FinalVerdictRequest
     ): Response<FinalVerdictResponse>

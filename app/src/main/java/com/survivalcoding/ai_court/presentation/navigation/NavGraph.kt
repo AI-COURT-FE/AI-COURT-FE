@@ -98,9 +98,11 @@ fun CourtNavGraph(
 
             VerdictScreen(
                 roomCode = roomCode,
-                onNavigateToEntry = {
+                onNavigateBack = { navController.popBackStack() },
+                onGoToMain = {
                     navController.navigate(Route.Entry.route) {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo(Route.Entry.route) { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             )

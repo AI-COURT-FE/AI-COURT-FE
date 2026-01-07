@@ -22,12 +22,12 @@ class VerdictViewModel @Inject constructor(
     val uiState: StateFlow<VerdictUiState> = _uiState.asStateFlow()
 
     /**
-     * ✅ "최종 판결문" 1회 요청용
-     * - 실시간 verdict는 여기서 다루지 않음
+     * "최종 판결문" 1회 요청용
+     * 실시간 verdict는 여기서 다루지 않음
      */
     fun requestFinalVerdict(roomCode: String) {
         if (roomCode.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "방 코드가 올바르지 않습니다.") }
+            _uiState.update { it.copy(errorMessage = "roomCode가 비어 있음") }
             return
         }
 
@@ -59,6 +59,10 @@ class VerdictViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun clearVerdict() {
+        _uiState.update { it.copy(finalVerdict = null) }
     }
 
     fun clearError() {
