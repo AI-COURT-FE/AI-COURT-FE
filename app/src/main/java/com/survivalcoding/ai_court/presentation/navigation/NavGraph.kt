@@ -9,6 +9,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.survivalcoding.ai_court.presentation.chat.screen.ChatScreen
 import com.survivalcoding.ai_court.presentation.entry.screen.EntryScreen
+import com.survivalcoding.ai_court.presentation.verdict.screen.VerdictScreen
+import com.survivalcoding.ai_court.presentation.waiting.screen.WaitingScreen
 
 @Composable
 fun CourtNavGraph(
@@ -22,8 +24,8 @@ fun CourtNavGraph(
     ) {
         composable(route = Route.Entry.route) {
             EntryScreen(
-                onNavigateToChat = { roomCode, userId, nickname ->
-                    navController.navigate(Route.Chat.createRoute(roomCode, userId, nickname)) {
+                onNavigateToWaiting = { roomCode, userId, nickname ->
+                    navController.navigate(Route.Waiting.createRoute(roomCode)) {
                         popUpTo(Route.Entry.route) { inclusive = true }
                     }
                 }
@@ -34,19 +36,54 @@ fun CourtNavGraph(
             route = Route.Chat.route,
             arguments = listOf(
                 navArgument("roomCode") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType },
-                navArgument("nickname") { type = NavType.StringType }
+//                navArgument("userId") { type = NavType.StringType },
+//                navArgument("nickname") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val roomCode = backStackEntry.arguments?.getString("roomCode") ?: ""
-            val userId = backStackEntry.arguments?.getString("userId") ?: ""
-            val nickname = backStackEntry.arguments?.getString("nickname") ?: ""
+//            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+//            val nickname = backStackEntry.arguments?.getString("nickname") ?: ""
+            val userId = ""
+            val nickname = ""
 
             ChatScreen(
                 roomCode = roomCode,
                 userId = userId,
                 nickname = nickname,
                 onNavigateBack = {
+                    navController.navigate(Route.Entry.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = Route.Waiting.route,
+            arguments = listOf(navArgument("roomCode") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val roomCode = backStackEntry.arguments?.getString("roomCode").orEmpty()
+
+            WaitingScreen(
+                roomCode = roomCode,
+                onNavigateToChat = {
+                    navController.navigate(Route.Chat.createRoute(roomCode)) {
+                        popUpTo(Route.Waiting.route) { inclusive = true }
+                    }
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Route.Verdict.route,
+            arguments = listOf(navArgument("roomCode") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val roomCode = backStackEntry.arguments?.getString("roomCode").orEmpty()
+
+            VerdictScreen(
+                roomCode = roomCode,
+                onNavigateToEntry = {
                     navController.navigate(Route.Entry.route) {
                         popUpTo(0) { inclusive = true }
                     }
