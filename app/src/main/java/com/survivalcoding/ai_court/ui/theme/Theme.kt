@@ -9,6 +9,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 
@@ -91,3 +92,14 @@ fun AI_COURTTheme(
     )
 }
 
+object AI_COURTTheme{
+    val colors : AICourtColors
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalAICourtColors.current
+
+    val typography: AI_CourtTypography
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalAI_CourtTypography.current
+}
