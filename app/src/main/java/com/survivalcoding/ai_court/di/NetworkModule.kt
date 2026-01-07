@@ -39,9 +39,19 @@ object NetworkModule {
     fun providesRetrofit(
         client: OkHttpClient,
         converterFactory: Converter.Factory
-    ): Retrofit = Retrofit.Builder()
-        .baseUrl(BuildConfig.BASE_URL)
-        .client(client)
-        .addConverterFactory(converterFactory)
-        .build()
+    ): Retrofit {
+        val baseUrl = BuildConfig.BASE_URL ?: "http://10.0.2.2:8080/"
+
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(client)
+            .addConverterFactory(converterFactory)
+            .build()
+    }
 }
+//    ): Retrofit = Retrofit.Builder()
+//        .baseUrl(BuildConfig.BASE_URL)
+//        .client(client)
+//        .addConverterFactory(converterFactory)
+//        .build()
+//}
