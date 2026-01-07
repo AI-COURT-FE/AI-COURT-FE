@@ -36,6 +36,7 @@ import com.survivalcoding.ai_court.presentation.entry.viewmodel.EntryViewModel
 @Composable
 fun EntryScreen(
     onNavigateToWaiting: (roomCode: String, userId: String, nickname: String) -> Unit,
+    onNavigateToJoin: () -> Unit,
     viewModel: EntryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
