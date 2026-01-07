@@ -1,7 +1,6 @@
 package com.survivalcoding.ai_court.ui.theme
 
 
-import android.R.attr.fontFamily
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
@@ -11,7 +10,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.survivalcoding.ai_court.R
-import retrofit2.http.Body
 
 val NanumFontLight = FontFamily(Font(R.font.nanumsquare_l))
 val NanumFontRegular = FontFamily(Font(R.font.nanumsquare_r))
@@ -48,28 +46,28 @@ val defaultAI_CourtTypography = AI_CourtTypography(
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 30.sp,
-        letterSpacing = (-0.25).em,
+        letterSpacing = (-0.0025).em,
     ),
     Title_1 = TextStyle(
         fontFamily = OktapbangFont,
         fontWeight = FontWeight.Normal,
         fontSize = 35.sp,
         lineHeight = 30.sp,
-        letterSpacing = (-0.25).em,
+        letterSpacing = (-0.0025).em,
     ),
     Title_2 = TextStyle(
         fontFamily = OktapbangFont,
         fontWeight = FontWeight.Normal,
         fontSize = 40.sp,
         lineHeight = 30.sp,
-        letterSpacing = (-0.25).em,
+        letterSpacing = (-0.0025).em,
     ),
     Body_1 = TextStyle(
         fontFamily = OktapbangFont,
         fontWeight = FontWeight.Normal,
         fontSize = 24.sp,
         lineHeight = 30.sp,
-        letterSpacing = (-0.25).em,
+        letterSpacing = (-0.0025).em,
     ),
     Body_2 = TextStyle(
         fontFamily = OktapbangFont,

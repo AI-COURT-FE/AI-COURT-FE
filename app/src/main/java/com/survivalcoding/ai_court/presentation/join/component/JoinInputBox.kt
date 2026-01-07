@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.survivalcoding.ai_court.R
@@ -33,7 +33,7 @@ fun JoinInputBox(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 32.dp)
-            .height(452.dp)
+            .height(375.dp)
             .clip(cardShape)
             .background(Color.White)
     ) {
@@ -49,32 +49,35 @@ fun JoinInputBox(modifier: Modifier = Modifier) {
 
         Column(
             modifier = Modifier
-                .padding(top = 53.dp)
+                .padding(top = 52.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                painter = painterResource(R.drawable.ic_waiting_room),
-                contentDescription = "대기 아이콘",
-                modifier = Modifier.size(69.dp)
-            )
-
-            Spacer(modifier = Modifier.height(15.dp))
-
             Text(
-                text = "피고 소환 대기 중",
+                text = "사건번호 입력",
                 style = AI_COURTTheme.typography.Body_1,
                 color = AI_COURTTheme.colors.black
             )
 
-            Spacer(modifier = Modifier.height(15.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "상대방에게 사건번호 또는 링크를\n전송하여 법정에 입장시키세요.",
-                style = AI_COURTTheme.typography.Caption_regular
+                text = "전달받은 사건번호를 입력하여 \n" +
+                        "법정에 입장하세요",
+                style = AI_COURTTheme.typography.Caption_regular,
+                textAlign = TextAlign.Center,
+                )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Image(
+                painter = painterResource(R.drawable.ic_lock),
+                contentDescription = "자물쇠",
+                modifier = Modifier
+                    .size(65.dp)
             )
 
-            Spacer(modifier = Modifier.height(21.dp))
+            Spacer(modifier = Modifier.height(23.dp))
 
             Box(
                 modifier = Modifier
@@ -83,58 +86,24 @@ fun JoinInputBox(modifier: Modifier = Modifier) {
                     .height(122.dp)
                     .border(1.dp, Color(0xFFBABABA), innerShape)
                     .background(Color(0xFFEDEDED), innerShape)
-                    .padding(horizontal = 19.dp)
             ) {
                 Column(
                     modifier = Modifier.align(Alignment.CenterStart)
                 ) {
                     Text(
-                        text = "사건번호",
+                        text = "사건번호를 입력하세요.",
                         style = AI_COURTTheme.typography.Caption_regular,
-                        modifier = Modifier.padding(top = 18.dp)
+                        modifier = Modifier.padding(start = 15.dp)
                     )
                     Text(
-                        text = "2024-1234",
+                        text = "XXXX-XXXX",
                         style = AI_COURTTheme.typography.Title_1,
-                        modifier = Modifier.padding(top = 18.dp)
+                        color = Color(0xFF8C8C8C),
+                        modifier = Modifier.padding(top = 18.dp, start= 34.dp)
                     )
                 }
-
-                Image(
-                    painter = painterResource(R.drawable.ic_copy),
-                    contentDescription = "복사하기",
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(end = 12.dp)
-                        .size(52.dp)
-                )
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 22.dp)
-                    .height(54.dp)
-                    .border(1.dp, AI_COURTTheme.colors.black, innerShape)
-                    .background(AI_COURTTheme.colors.white, innerShape)
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_share),
-                    contentDescription = "공유하기",
-                    modifier = Modifier
-                        .padding(start = 21.dp)
-                        .size(24.dp)
-                )
-
-                Text(
-                    text = "초대링크 복사하기",
-                    style = AI_COURTTheme.typography.Body_2,
-                    modifier = Modifier.padding(start = 38.dp)
-                )
-            }
         }
     }
 }
