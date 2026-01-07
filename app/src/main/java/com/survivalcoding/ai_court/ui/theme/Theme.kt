@@ -13,15 +13,59 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Brown100,
-    secondary = Brown200,
-    tertiary = Brown300
+    primary = LightBlue,
+    onPrimary = DarkNavy,
+
+    secondary = Brown,
+    onSecondary = SoftWhite,
+
+    tertiary = Blue,
+    onTertiary = White,
+
+    background = Gray950,
+    onBackground = SoftWhite,
+
+    surface = Gray900,
+    onSurface = SoftWhite,
+
+    surfaceVariant = Gray800,
+    onSurfaceVariant = Gray200,
+
+    outline = Gray600,
+    outlineVariant = Gray700,
+
+    error = LightRed,
+    onError = DarkNavy,
+    errorContainer = DarkRed2,
+    onErrorContainer = SoftWhite,
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Brown400,
-    secondary = Brown500,
-    tertiary = Brown600
+    primary = DarkNavy,
+    onPrimary = White,
+
+    secondary = Brown,
+    onSecondary = SoftWhite,
+
+    tertiary = Blue,
+    onTertiary = White,
+
+    background = Cream,
+    onBackground = DarkNavy,
+
+    surface = SoftWhite,
+    onSurface = DarkNavy,
+
+    surfaceVariant = Gray50,
+    onSurfaceVariant = Gray700,
+
+    outline = Gray300,
+    outlineVariant = Gray200,
+
+    error = DarkRed,
+    onError = White,
+    errorContainer = LightRed,
+    onErrorContainer = DarkRed2,
 )
 
 @Composable
