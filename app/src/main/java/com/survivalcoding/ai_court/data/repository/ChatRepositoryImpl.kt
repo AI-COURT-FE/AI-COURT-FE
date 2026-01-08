@@ -3,13 +3,10 @@ package com.survivalcoding.ai_court.data.repository
 import com.survivalcoding.ai_court.BuildConfig
 import com.survivalcoding.ai_court.core.util.Resource
 import com.survivalcoding.ai_court.data.api.RoomApiService
-import com.survivalcoding.ai_court.data.model.request.SendMessageRequest
+import com.survivalcoding.ai_court.data.model.request.SendMessageRequestDto
 import com.survivalcoding.ai_court.data.model.request.VerdictRequest
-import com.survivalcoding.ai_court.data.model.response.ChatMessageResponse
+import com.survivalcoding.ai_court.data.model.response.ChatMessageDto
 import com.survivalcoding.ai_court.data.model.response.VerdictResponse
-import com.survivalcoding.ai_court.data.model.response.WebSocketEvent
-import com.survivalcoding.ai_court.data.model.response.WebSocketEventType
-import com.survivalcoding.ai_court.data.model.response.WinRateResponse
 import com.survivalcoding.ai_court.domain.model.ChatMessage
 import com.survivalcoding.ai_court.domain.model.Verdict
 import com.survivalcoding.ai_court.domain.model.WinRate
@@ -23,13 +20,31 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+
+// WebSocket 이벤트 구조 (내부 통신용)
+@Serializable
+private data class WebSocketEvent(
+    val type: String,
+    val payload: String
+)
+
+// WinRate 응답 (WebSocket용)
+@Serializable
+private data class WinRateResponse(
+    val userAScore: Int,
+    val userBScore: Int
+) {
+    fun toDomain() = WinRate(userAScore, userBScore)
+}
 
 class ChatRepositoryImpl @Inject constructor(
     private val okHttpClient: OkHttpClient,
@@ -40,7 +55,7 @@ class ChatRepositoryImpl @Inject constructor(
     private var webSocket: WebSocket? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val _messages = MutableSharedFlow<ChatMessageResponse>(replay = 100)
+    private val _messages = MutableSharedFlow<ChatMessageDto>(replay = 100)
     private val _winRate = MutableStateFlow(WinRateResponse(50, 50))
 
     private var currentRoomCode: String? = null
@@ -64,11 +79,11 @@ class ChatRepositoryImpl @Inject constructor(
         try {
             val event = json.decodeFromString<WebSocketEvent>(text)
             when (event.type) {
-                WebSocketEventType.MESSAGE -> {
-                    val message = json.decodeFromString<ChatMessageResponse>(event.payload)
+                "MESSAGE" -> {
+                    val message = json.decodeFromString<ChatMessageDto>(event.payload)
                     _messages.emit(message)
                 }
-                WebSocketEventType.WIN_RATE -> {
+                "WIN_RATE" -> {
                     val winRate = json.decodeFromString<WinRateResponse>(event.payload)
                     _winRate.value = winRate
                 }
@@ -87,13 +102,18 @@ class ChatRepositoryImpl @Inject constructor(
         val roomCode = currentRoomCode ?: return Resource.Error("Not connected")
         val userId = currentUserId ?: return Resource.Error("Not connected")
 
-        val request = SendMessageRequest(roomCode, userId, content)
+        val request = SendMessageRequestDto(content)
         val event = WebSocketEvent(
-            type = WebSocketEventType.MESSAGE,
-            payload = json.encodeToString(SendMessageRequest.serializer(), request)
+            type = "MESSAGE",
+            payload = json.encodeToString(SendMessageRequestDto.serializer(), request)
         )
 
-        return if (webSocket?.send(json.encodeToString(WebSocketEvent.serializer(), event)) == true) {
+        return if (webSocket?.send(
+                json.encodeToString(
+                    WebSocketEvent.serializer(), event
+                )
+            ) == true
+        ) {
             Resource.Success(Unit)
         } else {
             Resource.Error("Failed to send")
@@ -101,8 +121,8 @@ class ChatRepositoryImpl @Inject constructor(
     }
 
     override fun observeMessages(): Flow<List<ChatMessage>> {
-        return _messages.runningFold(emptyList()) { acc, response ->
-            acc + response.toDomain(currentUserId ?: "")
+        return _messages.runningFold(emptyList()) { acc, dto ->
+            acc + dto.toDomain(currentUserId ?: "")
         }
     }
 
@@ -123,17 +143,30 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun ChatMessageResponse.toDomain(userId: String) = ChatMessage(
-        id = id, roomCode = roomCode, senderId = senderId,
-        senderNickname = senderNickname, content = content,
-        timestamp = timestamp, isMyMessage = senderId == userId
-    )
+    private fun ChatMessageDto.toDomain(userId: String): ChatMessage {
+        val timestamp = try {
+            Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(createdAt)).toEpochMilli()
+        } catch (e: Exception) {
+            System.currentTimeMillis()
+        }
 
-    private fun WinRateResponse.toDomain() = WinRate(userAScore, userBScore)
+        return ChatMessage(
+            id = messageId?.toString() ?: "",
+            roomCode = currentRoomCode ?: "",
+            senderId = senderId?.toString() ?: "",
+            senderNickname = senderNickname,
+            content = content,
+            timestamp = timestamp,
+            isMyMessage = senderId?.toString() == userId
+        )
+    }
 
     private fun VerdictResponse.toDomain() = Verdict(
-        winner = winner, winnerNickname = winnerNickname,
-        scoreA = scoreA, scoreB = scoreB, reason = reason, summary = summary
+        winner = winner,
+        winnerNickname = winnerNickname,
+        scoreA = scoreA,
+        scoreB = scoreB,
+        reason = reason,
+        summary = summary
     )
 }
-
