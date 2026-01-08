@@ -29,9 +29,8 @@ import org.hildan.krossbow.stomp.frame.StompFrame
 import org.hildan.krossbow.stomp.headers.StompSendHeaders
 import org.hildan.krossbow.stomp.headers.StompSubscribeHeaders
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Locale
 import javax.inject.Inject
 
 @kotlinx.serialization.Serializable
@@ -50,7 +49,7 @@ class ChatRepositoryImpl @Inject constructor(
     private val stompClient = StompClient(OkHttpWebSocketClient())
     private var stompSession: StompSession? = null
 
-    // ✅ 구독은 Subscription 객체가 아니라 "collect Job"으로 관리
+    // 구독은 Subscription 객체가 아니라 "collect Job"으로 관리
     private var messageJob: Job? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -70,7 +69,7 @@ class ChatRepositoryImpl @Inject constructor(
                 currentRoomCode = roomCode
                 currentUserId = userId.toLongOrNull()
 
-                // ⚠️ 지금은 roomCode가 chatRoomId(숫자)라고 가정
+                // 지금은 roomCode가 chatRoomId(숫자)라고 가정
                 currentChatRoomId = roomCode.toLongOrNull()
                 val chatRoomId = currentChatRoomId
                 if (chatRoomId == null) {
@@ -81,22 +80,22 @@ class ChatRepositoryImpl @Inject constructor(
                 _isConnected.value = false
                 _error.value = null
 
-                // ✅ BASE_URL -> ws/wss 변환 + 문서대로 /ws
+                // BASE_URL -> ws/wss 변환 + 문서대로 /ws
                 val httpBase = BuildConfig.BASE_URL.trimEnd('/')
                 val wsBase = httpBase
                     .replaceFirst("https://", "wss://")
                     .replaceFirst("http://", "ws://")
                 val wsUrl = "$wsBase/ws"
 
-                // ✅ STOMP 연결
+                // STOMP 연결
                 stompSession = stompClient.connect(wsUrl)
                 _isConnected.value = true
 
-                // ✅ 기존 구독 정리
+                // 기존 구독 정리
                 messageJob?.cancel()
                 messageJob = null
 
-                // ✅ 메시지 구독(Flow collect)
+                // 메시지 구독(Flow collect)
                 val headers = StompSubscribeHeaders(destination = "/topic/chatroom/$chatRoomId")
                 val session = stompSession ?: throw IllegalStateException("No STOMP session")
 
@@ -192,9 +191,15 @@ class ChatRepositoryImpl @Inject constructor(
     private fun ChatMessageDto.toDomain(userId: String): ChatMessage {
         // createdAt이 "2026-01-08T12:00:00"처럼 오프셋 없을 수 있어 LocalDateTime 파싱
         val timestamp = runCatching {
-            val ldt = LocalDateTime.parse(createdAt, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-            ldt.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        }.getOrElse { System.currentTimeMillis() }
+            val sdf = SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss",
+                Locale.getDefault()
+            )
+            sdf.parse(createdAt)?.time ?: System.currentTimeMillis()
+        }.getOrElse {
+            System.currentTimeMillis()
+        }
+
 
         val isMyMessage = senderId?.toString() == userId
 
