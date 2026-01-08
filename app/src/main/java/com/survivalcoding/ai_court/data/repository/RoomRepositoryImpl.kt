@@ -2,12 +2,15 @@ package com.survivalcoding.ai_court.data.repository
 
 import com.survivalcoding.ai_court.core.util.Resource
 import com.survivalcoding.ai_court.data.api.RoomApiService
+import com.survivalcoding.ai_court.data.model.request.ExitDecisionRequestDto
 import com.survivalcoding.ai_court.data.model.request.JoinChatRoomRequestDto
 import com.survivalcoding.ai_court.data.model.request.LoginRequestDto
 import com.survivalcoding.ai_court.data.model.response.CreateChatRoomResponseDto
+import com.survivalcoding.ai_court.data.model.response.ExitDecisionResponseDto
+import com.survivalcoding.ai_court.data.model.response.ExitRequestResponseDto
 import com.survivalcoding.ai_court.data.model.response.JoinChatRoomResponseDto
 import com.survivalcoding.ai_court.domain.model.Room
-import com.survivalcoding.ai_court.domain.model.User
+import com.survivalcoding.ai_court.domain.model.User as DomainUser
 import com.survivalcoding.ai_court.domain.repository.RoomRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -95,8 +98,8 @@ class RoomRepositoryImpl @Inject constructor(
 
     private fun CreateChatRoomResponseDto.toDomain(hostNickname: String): Room {
         return Room(
-            roomCode = participantCode, // 참가자 코드를 roomCode로 사용
-            hostUser = User(
+            roomCode = participantCode,
+            hostUser = DomainUser(
                 sessionId = chatRoomId.toString(),
                 nickname = hostNickname
             ),
@@ -108,15 +111,57 @@ class RoomRepositoryImpl @Inject constructor(
     private fun JoinChatRoomResponseDto.toDomain(guestNickname: String): Room {
         return Room(
             roomCode = chatRoomId.toString(),
-            hostUser = User(
+            hostUser = DomainUser(
                 sessionId = "",
-                nickname = "" // 입장 시에는 호스트 정보를 알 수 없음
+                nickname = ""
             ),
-            guestUser = User(
+            guestUser = DomainUser(
                 sessionId = chatRoomId.toString(),
                 nickname = guestNickname
             ),
-            isReady = true // 입장했으므로 준비됨
+            isReady = true
         )
+    }
+
+    override suspend fun requestExit(
+        chatRoomId: Long,
+        user: DomainUser
+    ): ExitRequestResponseDto {
+        val login = ensureLoggedIn(user.nickname)
+        if (login is Resource.Error) throw IllegalStateException(login.message ?: "로그인 실패")
+
+        val response = roomApiService.requestExit(
+            chatRoomId = chatRoomId,
+            user = user.toExitQueryMap()
+        )
+        return response.result
+    }
+
+    override suspend fun decideExit(
+        chatRoomId: Long,
+        user: DomainUser,
+        approve: Boolean
+    ): ExitDecisionResponseDto {
+        val login = ensureLoggedIn(user.nickname)
+        if (login is Resource.Error) throw IllegalStateException(login.message ?: "로그인 실패")
+
+        val response = roomApiService.decideExit(
+            chatRoomId = chatRoomId,
+            user = user.toExitQueryMap(),
+            body = ExitDecisionRequestDto(approve = approve)
+        )
+        return response.result
+    }
+
+    private fun DomainUser.toExitQueryMap(): Map<String, String> {
+        val idLong = sessionId.toLongOrNull() ?: 0L
+
+        return buildMap {
+            put("id", idLong.toString())
+            put("nickname", nickname)
+            // 너희 프로젝트는 login(password)에 nickname을 그대로 쓰고 있으니 동일하게 맞춤 :contentReference[oaicite:1]{index=1}
+            put("password", nickname)
+            // createdAt/modifiedAt은 보통 필요 없어서 생략
+        }
     }
 }
