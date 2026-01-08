@@ -1,4 +1,3 @@
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -55,8 +54,7 @@ private fun ChatScreenContent(
             .background(color = AI_COURTTheme.colors.cream)
     ) {
         ChatTopBar(
-            roomCode = roomCode,
-            onNavigateBack = onNavigateBack
+            roomCode = roomCode, onNavigateBack = onNavigateBack
         )
         WinRateHeader(
             leftName = uiState.opponentNickname,
@@ -65,17 +63,27 @@ private fun ChatScreenContent(
             rightScore = uiState.winRate.userBScore
         )
 
-        Row (
-            Modifier
-                .padding(horizontal = 100.dp)
-                .height(26.dp)
-                .background(color = Color(0xFF333333), shape = RoundedCornerShape(size = 13.dp))
-        ){
-            Text(
-                "AI 판사가 실시간 분석 중입니다.",
-                style = AI_COURTTheme.typography.Caption_3,
-                color = AI_COURTTheme.colors.white
-            )
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(top = 6.dp)
+                    .height(26.dp)
+                    .background(
+                        color = Color(0xFF333333),
+                        shape = RoundedCornerShape(13.dp)
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "AI 판사가 실시간 분석 중입니다.",
+                    style = AI_COURTTheme.typography.Caption_3,
+                    color = AI_COURTTheme.colors.white,
+                    modifier = Modifier.padding(horizontal = 12.dp) // 내부 여백 추천
+                )
+            }
         }
 
         LazyColumn(
@@ -87,24 +95,24 @@ private fun ChatScreenContent(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             items(
-                items = uiState.messages,
-                key = { it.id }
-            ) { message ->
+                items = uiState.messages, key = { it.id }) { message ->
                 ChatBubble(
-                    message = message,
-                    isMine = message.senderId == myUserId
+                    message = message, isMine = message.senderId == myUserId
                 )
             }
         }
 
-        Row(modifier = Modifier.fillMaxWidth()
-            .padding(horizontal =20.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+        ) {
             ChatInput(
                 value = uiState.inputMessage,
                 onValueChange = onInputChange,
                 onSendClick = onSendClick,
                 modifier = Modifier
-                    .padding(end=17.dp)
+                    .padding(end = 17.dp)
                     .weight(1f)
             )
             Box(
@@ -117,8 +125,7 @@ private fun ChatScreenContent(
             ) {
                 Image(
                     painter = painterResource(R.drawable.ic_send), // 넣을 이미지
-                    contentDescription = null,
-                    modifier = Modifier.size(28.dp) // 안쪽 이미지 크기
+                    contentDescription = null, modifier = Modifier.size(28.dp) // 안쪽 이미지 크기
                 )
             }
 
@@ -126,8 +133,7 @@ private fun ChatScreenContent(
         }
         if (uiState.showVerdictDialog) {
             JudgeConfirmDialog(
-                onCancel = onCancelVerdict,
-                onConfirm = onConfirmVerdict
+                onCancel = onCancelVerdict, onConfirm = onConfirmVerdict
             )
         }
     }
@@ -153,8 +159,7 @@ fun ChatScreen(
         onConfirmVerdict = {
             viewModel.closeVerdictDialog()
             // 판결 요청 로직
-        }
-    )
+        })
 }
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 760)
@@ -169,8 +174,7 @@ private fun ChatScreenPreview() {
             content = "솔직히 네가 늦은 건 맞잖아\n사과는 해야지",
             timestamp = System.currentTimeMillis(),
             isMyMessage = false
-        ),
-        ChatMessage(
+        ), ChatMessage(
             id = "2",
             roomCode = "TEST123",
             senderId = "me",
@@ -178,8 +182,7 @@ private fun ChatScreenPreview() {
             content = "아니 차가 막힌 걸 어쩔 수 없잖아",
             timestamp = System.currentTimeMillis(),
             isMyMessage = true
-        ),
-        ChatMessage(
+        ), ChatMessage(
             id = "3",
             roomCode = "TEST123",
             senderId = "me",
@@ -206,6 +209,5 @@ private fun ChatScreenPreview() {
         onInputChange = {},
         onSendClick = {},
         onCancelVerdict = {},
-        onConfirmVerdict = {}
-    )
+        onConfirmVerdict = {})
 }
