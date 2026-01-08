@@ -1,21 +1,17 @@
 package com.survivalcoding.ai_court.di
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import com.survivalcoding.ai_court.BuildConfig
 import com.survivalcoding.ai_court.data.api.SessionCookieJar
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
-import okhttp3.JavaNetCookieJar
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Converter
 import retrofit2.Retrofit
-import java.net.CookieManager
-import java.net.CookiePolicy
 import javax.inject.Singleton
 
 @Module
@@ -50,7 +46,8 @@ object NetworkModule {
         client: OkHttpClient,
         converterFactory: Converter.Factory
     ): Retrofit {
-        val baseUrl = BuildConfig.BASE_URL ?: "http://10.0.2.2:8080/"
+//        val baseUrl = BuildConfig.BASE_URL ?: "http://10.0.2.2:8080/"
+        val baseUrl ="https://objection.malmo.io.kr/"
         return Retrofit.Builder()
             .baseUrl(baseUrl)
             .client(client)
