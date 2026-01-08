@@ -1,6 +1,7 @@
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +17,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +29,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.survivalcoding.ai_court.R
+import com.survivalcoding.ai_court.presentation.chat.component.JudgeConfirmDialog
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
 
@@ -41,8 +45,20 @@ fun WinRateHeader(
     rightName: String,
     leftScore: Int,
     rightScore: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRequestVerdict: () -> Unit = {}
 ) {
+    var showJudgeDialog by remember { mutableStateOf(false) }
+
+    if (showJudgeDialog) {
+        JudgeConfirmDialog(
+            onCancel = { showJudgeDialog = false },
+            onConfirm = {
+                showJudgeDialog = false
+                onRequestVerdict()
+            }
+        )
+    }
 
     val leftRatio = remember(leftScore, rightScore) {
         calcPercent(leftScore, rightScore) // 0~1
@@ -126,6 +142,7 @@ fun WinRateHeader(
         Spacer(modifier= Modifier.height(11.dp))
         Row(
             modifier = Modifier
+                .clickable { showJudgeDialog = true }
                 .shadow(
                     elevation = 4.dp,
                     spotColor = Color(0x40000000),
