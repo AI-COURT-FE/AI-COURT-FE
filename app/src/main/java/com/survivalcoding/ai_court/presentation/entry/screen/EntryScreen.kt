@@ -1,6 +1,5 @@
 package com.survivalcoding.ai_court.presentation.entry.screen
 
-import android.R.attr.onClick
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -92,7 +91,14 @@ fun EntryScreen(
             // 방 만들기 버튼
             CourtButton(
                 text = "채팅방 생성하기",
-                onClick = viewModel::createRoom,
+                onClick = {
+                    if (uiState.nickname.isBlank()) {
+                        joinError = "닉네임을 입력해주세요."
+                    } else {
+                        joinError = null
+                        viewModel.createRoom()
+                    }
+                },
                 enabled = !uiState.isLoading,
             )
 
@@ -103,8 +109,9 @@ fun EntryScreen(
                 onClick = {
                     if (uiState.nickname.isBlank()) {
                         joinError = "닉네임을 입력해주세요."
+                    } else if (uiState.isLoading) {
+                        // 로딩 중이면 아무것도 안 함
                     } else {
-                        viewModel::createRoom
                         joinError = null
                         onNavigateToJoin()
                     }
@@ -112,6 +119,7 @@ fun EntryScreen(
                 enabled = !uiState.isLoading,
                 containerColor = AI_COURTTheme.colors.redBrown
             )
+
 
             joinError?.let { error ->
                 Spacer(modifier = Modifier.height(14.dp))
