@@ -2,7 +2,9 @@ package com.survivalcoding.ai_court.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key.Companion.J
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -13,6 +15,7 @@ import androidx.navigation.navArgument
 import com.survivalcoding.ai_court.presentation.chat.screen.ChatScreen
 import com.survivalcoding.ai_court.presentation.chat.viewmodel.ChatViewModel
 import com.survivalcoding.ai_court.presentation.entry.screen.EntryScreen
+import com.survivalcoding.ai_court.presentation.entry.viewmodel.EntryViewModel
 import com.survivalcoding.ai_court.presentation.join.screen.JoinScreen
 import com.survivalcoding.ai_court.presentation.verdict.screen.VerdictScreen
 import com.survivalcoding.ai_court.presentation.waiting.screen.WaitingScreen
@@ -40,8 +43,17 @@ fun CourtNavGraph(
             )
         }
 
-        composable(route = Route.Join.route) {
+        composable(route = Route.Join.route) { backStackEntry ->
+
+            val entryBackStackEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Route.Entry.route)
+            }
+
+            val entryViewModel: EntryViewModel = hiltViewModel(entryBackStackEntry)
+            val entryState by entryViewModel.uiState.collectAsStateWithLifecycle()
+
             JoinScreen(
+                nickname = entryState.nickname,
                 onJoinSuccess = { roomCode ->
                     navController.navigate(Route.Chat.createRoute(roomCode)) {
                         popUpTo(Route.Join.route) { inclusive = true }
@@ -50,6 +62,7 @@ fun CourtNavGraph(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
+
 
         composable(
             route = Route.Chat.route,

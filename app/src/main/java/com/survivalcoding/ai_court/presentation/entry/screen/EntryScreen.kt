@@ -1,5 +1,6 @@
 package com.survivalcoding.ai_court.presentation.entry.screen
 
+import android.R.attr.onClick
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,6 +39,7 @@ fun EntryScreen(
     viewModel: EntryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var joinError by rememberSaveable { mutableStateOf<String?>(null) }
 
     // 네비게이션 이벤트 처리
     LaunchedEffect(uiState.navigateToChat) {
@@ -76,7 +81,10 @@ fun EntryScreen(
 
             NicknameInput(
                 value = uiState.nickname,
-                onValueChange = viewModel::onNicknameChanged
+                onValueChange = {
+                    joinError = null
+                    viewModel.onNicknameChanged(it)
+                }
             )
 
             Spacer(Modifier.height(93.dp))
@@ -92,10 +100,28 @@ fun EntryScreen(
 
             CourtButton(
                 text = "입장코드로 참여",
-                onClick = onNavigateToJoin,
+                onClick = {
+                    if (uiState.nickname.isBlank()) {
+                        joinError = "닉네임을 입력해주세요."
+                    } else {
+                        viewModel::createRoom
+                        joinError = null
+                        onNavigateToJoin()
+                    }
+                },
                 enabled = !uiState.isLoading,
                 containerColor = AI_COURTTheme.colors.redBrown
             )
+
+            joinError?.let { error ->
+                Spacer(modifier = Modifier.height(14.dp))
+                Text(
+                    text = error,
+                    color = Color(0xFFFF6B6B),
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 //
