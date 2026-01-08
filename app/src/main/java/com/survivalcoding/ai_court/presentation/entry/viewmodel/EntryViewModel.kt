@@ -3,6 +3,7 @@ package com.survivalcoding.ai_court.presentation.entry.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.survivalcoding.ai_court.core.util.Resource
+import com.survivalcoding.ai_court.domain.repository.AuthRepository
 import com.survivalcoding.ai_court.domain.repository.RoomRepository
 import com.survivalcoding.ai_court.presentation.entry.state.EntryUiState
 import com.survivalcoding.ai_court.presentation.entry.state.NavigateToChatEvent
@@ -17,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EntryViewModel @Inject constructor(
-    private val roomRepository: RoomRepository
+    private val roomRepository: RoomRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EntryUiState())
@@ -33,17 +35,50 @@ class EntryViewModel @Inject constructor(
         _uiState.update { it.copy(roomCode = roomCode, errorMessage = null) }
     }
 
-    fun createRoom() {
-        val nickname = _uiState.value.nickname
-        if (nickname.isBlank()) {
+    fun onPasswordChanged(password: String) {
+        _uiState.update { it.copy(password = password, errorMessage = null) }
+    }
+
+    private suspend fun ensureLoginOrShowError(): Boolean {
+        val state = _uiState.value
+        if (state.isLoggedIn) return true
+
+        if (state.nickname.isBlank()) {
             _uiState.update { it.copy(errorMessage = "닉네임을 입력해주세요") }
-            return
+            return false
         }
 
+        // 비번 입력 X nickname을 그대로 password로 넣기
+        val result = authRepository.login(
+            nickname = state.nickname,
+            password = state.nickname
+        )
+
+        return result.fold(
+            onSuccess = {
+                _uiState.update { it.copy(isLoggedIn = true) }
+                true
+            },
+            onFailure = { e ->
+                _uiState.update { it.copy(errorMessage = e.message ?: "로그인 실패") }
+                false
+            }
+        )
+    }
+
+
+    fun createRoom() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            when (val result = roomRepository.createRoom(nickname)) {
+            // 1) 로그인 먼저
+            if (!ensureLoginOrShowError()) {
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
+
+            // 2) 로그인 성공 후 기존 로직 그대로
+            when (val result = roomRepository.createRoom(_uiState.value.nickname)) {
                 is Resource.Success -> {
                     val room = result.data
                     _uiState.update {
@@ -56,11 +91,9 @@ class EntryViewModel @Inject constructor(
                     observeRoom(room.roomCode)
                 }
                 is Resource.Error -> {
-                    _uiState.update {
-                        it.copy(isLoading = false, errorMessage = result.message)
-                    }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
                 }
-                is Resource.Loading -> { /* handled by isLoading state */ }
+                is Resource.Loading -> {}
             }
         }
     }
@@ -122,7 +155,6 @@ class EntryViewModel @Inject constructor(
             }
         }
     }
-
     fun onNavigationHandled() {
         _uiState.update { it.copy(navigateToChat = null) }
     }
@@ -146,6 +178,5 @@ class EntryViewModel @Inject constructor(
             )
         }
     }
-
 }
 
