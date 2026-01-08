@@ -7,6 +7,9 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+
+
+    id("com.google.gms.google-services")
 }
 val properties = Properties().apply {
     load(project.rootProject.file("local.properties").inputStream())
@@ -55,6 +58,11 @@ android {
 }
 
 dependencies {
+
+
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-common-ktx")
+
     implementation(libs.androidx.core.splashscreen)
 
     implementation(libs.androidx.core.ktx)
@@ -98,4 +106,5 @@ dependencies {
     ksp(libs.hilt.android.compiler)
     ksp(libs.hilt.compiler)
     ksp(libs.hilt.manager)
+
 }

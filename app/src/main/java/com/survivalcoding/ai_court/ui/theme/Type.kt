@@ -1,4 +1,4 @@
-package com.survivalcoding.ai_court.ui.theme
+    package com.survivalcoding.ai_court.ui.theme
 
 
 import androidx.compose.material3.Typography
@@ -20,6 +20,8 @@ data class AI_CourtTypography(
     val Caption_regular: TextStyle,
     val Caption_tight: TextStyle, // 벌칙 들어주기 설명: 패소자 김논리님은 본 판결에 ...
     val Caption_3: TextStyle,
+    val Caption_4: TextStyle,
+
     val Title_1: TextStyle,
     val Title_2: TextStyle,
     val Body_1: TextStyle,
@@ -48,6 +50,12 @@ val defaultAI_CourtTypography = AI_CourtTypography(
         lineHeight = 30.sp,
         letterSpacing = (-0.0025).em,
     ),
+    Caption_4 = TextStyle(
+            fontSize = 14.sp,
+            lineHeight = 22.sp,
+            fontFamily = NanumFontRegular,
+            fontWeight = FontWeight(700)
+        ),
     Title_1 = TextStyle(
         fontFamily = OktapbangFont,
         fontWeight = FontWeight.Normal,
