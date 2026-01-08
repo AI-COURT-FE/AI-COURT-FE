@@ -1,5 +1,6 @@
 package com.survivalcoding.ai_court.data.api
 
+import android.util.Log
 import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
@@ -15,9 +16,17 @@ class SessionCookieJar: CookieJar{
 
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
         store[url.host] = cookies
+
+        val jsession = cookies.firstOrNull { it.name == "JSESSIONID" }?.value
+        Log.d("COOKIE", "saveFromResponse host=${url.host} JSESSIONID=$jsession all=${cookies.joinToString { it.name }}")
     }
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
-        return store[url.host].orEmpty()
+        val cookies = store[url.host].orEmpty()
+
+        val jsession = cookies.firstOrNull { it.name == "JSESSIONID" }?.value
+        Log.d("COOKIE", "loadForRequest url=${url.encodedPath} host=${url.host} JSESSIONID=$jsession sending=${cookies.joinToString { it.name }}")
+
+        return cookies
     }
 }
