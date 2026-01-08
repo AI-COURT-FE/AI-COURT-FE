@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -33,12 +32,11 @@ import com.survivalcoding.ai_court.R
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
 @Composable
-fun JudgeConfirmDialog(
+fun JudgeAcceptable(
     onCancel: () -> Unit,
     onConfirm: () -> Unit
 ) {
     Dialog(onDismissRequest = onCancel) {
-        // 팝업 컨테이너(테두리/그림자/배경/라운드)
         Box(
             modifier = Modifier
                 .shadow(
@@ -61,7 +59,7 @@ fun JudgeConfirmDialog(
                 .clip(RoundedCornerShape(27.dp))
                 .padding(24.dp),
         ) {
-            DialogContent(
+            JudgeAcceptableContent(
                 onCancel = onCancel,
                 onConfirm = onConfirm
             )
@@ -70,12 +68,14 @@ fun JudgeConfirmDialog(
 }
 
 @Composable
-private fun DialogContent(
+private fun JudgeAcceptableContent(
     onCancel: () -> Unit,
     onConfirm: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(top=37.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
@@ -89,7 +89,7 @@ private fun DialogContent(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "지금까지의 대화를 바탕으로\n판결을 요청하시겠습니까?",
+            text = "상대방이 판결을 요청했습니다.\n지금까지의 대화를 바탕으로\n판결을 수락하시겠습니까?",
             textAlign = TextAlign.Center,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold
@@ -101,7 +101,7 @@ private fun DialogContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            DialogButton(
+            JudgeAcceptableButton(
                 text = "취소",
                 background = AI_COURTTheme.colors.gray400,
                 textColor = Color.Black,
@@ -109,7 +109,7 @@ private fun DialogContent(
                 modifier = Modifier.weight(1f)
             )
 
-            DialogButton(
+            JudgeAcceptableButton(
                 text = "확인",
                 background = Color(0xFF7B5A3C),
                 textColor = Color.White,
@@ -121,7 +121,7 @@ private fun DialogContent(
 }
 
 @Composable
-fun DialogButton(
+private fun JudgeAcceptableButton(
     text: String,
     background: Color,
     textColor: Color,
@@ -133,7 +133,7 @@ fun DialogButton(
             .height(48.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(color = background)
-            .clickable { onClick() },
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -146,7 +146,7 @@ fun DialogButton(
 
 @Preview(showBackground = true, backgroundColor = 0xFFEFE7DA)
 @Composable
-private fun JudgeConfirmDialogContentPreview() {
+private fun JudgeAcceptablePreview() {
     Box(
         modifier = Modifier
             .width(337.dp)
@@ -156,7 +156,7 @@ private fun JudgeConfirmDialogContentPreview() {
             .clip(RoundedCornerShape(27.dp))
             .padding(24.dp)
     ) {
-        DialogContent(
+        JudgeAcceptableContent(
             onCancel = {},
             onConfirm = {}
         )
