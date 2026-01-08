@@ -1,8 +1,10 @@
 package com.survivalcoding.ai_court.data.api
 
 import com.survivalcoding.ai_court.data.model.request.CreateRoomRequest
+import com.survivalcoding.ai_court.data.model.request.FinalVerdictRequest
 import com.survivalcoding.ai_court.data.model.request.JoinRoomRequest
 import com.survivalcoding.ai_court.data.model.request.VerdictRequest
+import com.survivalcoding.ai_court.data.model.response.FinalVerdictResponse
 import com.survivalcoding.ai_court.data.model.response.RoomResponse
 import com.survivalcoding.ai_court.data.model.response.VerdictResponse
 import retrofit2.Response
@@ -23,4 +25,9 @@ interface RoomApiService {
 
     @POST("verdict")
     suspend fun requestVerdict(@Body request: VerdictRequest): Response<VerdictResponse>
+
+    @POST("verdict/final")
+    suspend fun requestFinalVerdict(
+        @Body request: FinalVerdictRequest
+    ): Response<FinalVerdictResponse>
 }
