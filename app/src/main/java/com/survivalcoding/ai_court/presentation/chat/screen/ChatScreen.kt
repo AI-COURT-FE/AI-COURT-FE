@@ -16,12 +16,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,96 +55,119 @@ private fun ChatScreenContent(
 ) {
     val listState = rememberLazyListState()
 
-    Column(
-        Modifier
+    Scaffold(
+        modifier = Modifier
             .fillMaxSize()
-            .systemBarsPadding()
-            .background(color = AI_COURTTheme.colors.cream)
-    ) {
-        ChatTopBar(
-            roomCode = roomCode, onNavigateBack = onNavigateBack
-        )
-        WinRateHeader(
-            leftName = uiState.opponentNickname,
-            rightName = uiState.myNickname,
-            leftScore = uiState.winRate.userAScore,
-            rightScore = uiState.winRate.userBScore
-        )
-
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
+            .statusBarsPadding(), // 상태바만
+        topBar = {
+            Column {
+                ChatTopBar(
+                    roomCode = roomCode,
+                    onNavigateBack = onNavigateBack
+                )
+                WinRateHeader(
+                    leftName = uiState.opponentNickname,
+                    rightName = uiState.myNickname,
+                    leftScore = uiState.winRate.userAScore,
+                    rightScore = uiState.winRate.userBScore
+                )
+            }
+        },
+        bottomBar = {
             Row(
                 modifier = Modifier
-                    .padding(top = 6.dp)
-                    .height(26.dp)
-                    .background(
-                        color = Color(0xFF333333),
-                        shape = RoundedCornerShape(13.dp)
-                    ),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxWidth()
+                    .background(AI_COURTTheme.colors.cream)
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 30.dp)
             ) {
-                Text(
-                    "AI 판사가 실시간 분석 중입니다.",
-                    style = AI_COURTTheme.typography.Caption_3,
-                    color = AI_COURTTheme.colors.white,
-                    modifier = Modifier.padding(horizontal = 12.dp)
+                ChatInput(
+                    value = uiState.inputMessage,
+                    onValueChange = onInputChange,
+                    onSendClick = onSendClick,
+                    modifier = Modifier
+                        .padding(end = 17.dp)
+                        .weight(1f)
                 )
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF292D47)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_send),
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
         }
+    ) { innerPadding ->
 
-        LazyColumn(
+        Column(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            state = listState,
-            contentPadding = PaddingValues(vertical = 12f.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(AI_COURTTheme.colors.cream)
         ) {
-            items(
-                items = uiState.messages, key = { it.id }) { message ->
-                ChatBubble(
-                    message = message, isMine = message.isMyMessage
-                )
-            }
-        }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-        ) {
-            ChatInput(
-                value = uiState.inputMessage,
-                onValueChange = onInputChange,
-                onSendClick = onSendClick,
-                modifier = Modifier
-                    .padding(end = 17.dp)
-                    .weight(1f)
-            )
+            // 🔹 AI 분석중 배너
             Box(
-                modifier = Modifier
-                    .padding(1.dp)
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF292D47)),
+                modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_send),
-                    contentDescription = null, modifier = Modifier.size(28.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .padding(top = 6.dp)
+                        .height(26.dp)
+                        .background(
+                            color = Color(0xFF333333),
+                            shape = RoundedCornerShape(13.dp)
+                        ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "AI 판사가 실시간 분석 중입니다.",
+                        style = AI_COURTTheme.typography.Caption_3,
+                        color = AI_COURTTheme.colors.white,
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+                }
+            }
+
+            // 🔹 메시지 리스트 (스크롤 영역)
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                state = listState,
+                contentPadding = PaddingValues(vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                items(
+                    items = uiState.messages,
+                    key = { it.id }
+                ) { message ->
+                    ChatBubble(
+                        message = message,
+                        isMine = message.isMyMessage
+                    )
+                }
             }
         }
-        
+
+        // 🔹 판결 다이얼로그
         if (uiState.showVerdictDialog) {
             JudgeConfirmDialog(
-                onCancel = onCancelVerdict, onConfirm = onConfirmVerdict
+                onCancel = onCancelVerdict,
+                onConfirm = onConfirmVerdict
             )
         }
     }
 }
+
 
 @Composable
 fun ChatScreen(
