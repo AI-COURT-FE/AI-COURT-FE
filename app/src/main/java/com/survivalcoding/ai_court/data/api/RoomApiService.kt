@@ -1,5 +1,6 @@
 package com.survivalcoding.ai_court.data.api
 
+import com.survivalcoding.ai_court.data.model.request.ExitDecisionRequestDto
 import com.survivalcoding.ai_court.data.model.request.FinalVerdictRequest
 import com.survivalcoding.ai_court.data.model.request.JoinChatRoomRequestDto
 import com.survivalcoding.ai_court.data.model.request.LoginRequestDto
@@ -7,9 +8,9 @@ import com.survivalcoding.ai_court.data.model.request.SendMessageRequestDto
 import com.survivalcoding.ai_court.data.model.request.VerdictRequest
 import com.survivalcoding.ai_court.data.model.response.BaseResponse
 import com.survivalcoding.ai_court.data.model.response.ChatMessageDto
-import com.survivalcoding.ai_court.data.model.response.CreateChatRoomResponseDto
+import com.survivalcoding.ai_court.data.model.response.ExitDecisionResponseDto
+import com.survivalcoding.ai_court.data.model.response.ExitRequestResponseDto
 import com.survivalcoding.ai_court.data.model.response.FinalVerdictResponse
-import com.survivalcoding.ai_court.data.model.response.JoinChatRoomResponseDto
 import com.survivalcoding.ai_court.data.model.response.VerdictResponse
 import kotlinx.serialization.json.JsonElement
 import retrofit2.Response
@@ -17,6 +18,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.QueryMap
 
 interface RoomApiService {
     // 로그인: 세션 생성
@@ -53,6 +55,22 @@ interface RoomApiService {
         @Path("chatRoomId") chatRoomId: Long,
         @Body body: SendMessageRequestDto
     ): BaseResponse<ChatMessageDto>
+
+    // 채팅방 종료(판결) 요청
+    @POST("chat/room/{chatRoomId}/exit/request")
+    suspend fun requestExit(
+        @Path("chatRoomId") chatRoomId: Long,
+        // 스웨거 "user (query) object" → QueryMap으로 펼쳐서 전송
+        @QueryMap user: Map<String, String>
+    ): BaseResponse<ExitRequestResponseDto>
+
+    // 채팅방 종료(판결) 요청 결정
+    @POST("chat/room/{chatRoomId}/exit/decide")
+    suspend fun decideExit(
+        @Path("chatRoomId") chatRoomId: Long,
+        @QueryMap user: Map<String, String>,
+        @Body body: ExitDecisionRequestDto
+    ): BaseResponse<ExitDecisionResponseDto>
 
     @POST("verdict")
     suspend fun requestVerdict(
