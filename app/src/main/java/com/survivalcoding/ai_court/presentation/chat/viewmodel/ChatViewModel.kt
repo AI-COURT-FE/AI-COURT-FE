@@ -1,117 +1,63 @@
-package com.survivalcoding.ai_court.presentation.chat.viewmodel
-
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.survivalcoding.ai_court.core.util.Resource
-import com.survivalcoding.ai_court.domain.repository.ChatRepository
+import com.survivalcoding.ai_court.domain.model.ChatMessage
 import com.survivalcoding.ai_court.presentation.chat.state.ChatUiState
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import javax.inject.Inject
+import java.util.UUID
 
-@HiltViewModel
-class ChatViewModel @Inject constructor(
-    private val chatRepository: ChatRepository
-) : ViewModel() {
+class ChatViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
-    private var currentRoomCode: String = ""
+    fun onInputChange(text: String) {
+        _uiState.update { it.copy(inputMessage = text) }
+    }
 
-    fun connectToRoom(roomCode: String, userId: String, nickname: String) {
-        currentRoomCode = roomCode
+    fun onSendClick(roomCode: String, myUserId: String) {
+        val s = _uiState.value
+        val text = s.inputMessage.trim()
+        if (text.isBlank()) return
+
+        val newMessage = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            roomCode = roomCode,
+            senderId = myUserId,
+            senderNickname = s.myNickname,
+            content = text,
+            timestamp = System.currentTimeMillis(),
+            isMyMessage = true
+        )
+
+        _uiState.update {
+            it.copy(
+                messages = it.messages + newMessage,
+                inputMessage = ""
+            )
+        }
+
+        // TODO: 서버/Firebase 전송 붙일 자리
+    }
+
+    fun setMyNickname(nickname: String) {
         _uiState.update { it.copy(myNickname = nickname) }
-
-        chatRepository.connectToRoom(roomCode, userId)
-
-        // 메시지 관찰
-        viewModelScope.launch {
-            chatRepository.observeMessages().collect { messages ->
-                _uiState.update { state ->
-                    // 상대방 닉네임 추출
-                    val opponentNickname = messages
-                        .firstOrNull { !it.isMyMessage }
-                        ?.senderNickname ?: "상대방"
-
-                    state.copy(
-                        messages = messages,
-                        isConnected = true,
-                        opponentNickname = opponentNickname
-                    )
-                }
-            }
-        }
-
-        // 승률 관찰
-        viewModelScope.launch {
-            chatRepository.observeWinRate().collect { winRate ->
-                _uiState.update { it.copy(winRate = winRate) }
-            }
-        }
     }
 
-    fun onInputMessageChanged(message: String) {
-        _uiState.update { it.copy(inputMessage = message) }
+    fun setOpponentNickname(nickname: String) {
+        _uiState.update { it.copy(opponentNickname = nickname) }
     }
 
-    fun sendMessage() {
-        val content = _uiState.value.inputMessage.trim()
-        if (content.isBlank()) return
-
-        when (chatRepository.sendMessage(content)) {
-            is Resource.Success -> {
-                _uiState.update { it.copy(inputMessage = "") }
-            }
-            is Resource.Error -> {
-                _uiState.update { it.copy(errorMessage = "메시지 전송 실패") }
-            }
-            is Resource.Loading -> { /* ignore */ }
-        }
+    fun openVerdictDialog() {
+        _uiState.update { it.copy(showVerdictDialog = true) }
     }
 
-    fun requestVerdict() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-
-            when (val result = chatRepository.requestVerdict(currentRoomCode)) {
-                is Resource.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            verdict = result.data,
-                            showVerdictDialog = true
-                        )
-                    }
-                }
-                is Resource.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-                is Resource.Loading -> { /* handled by isLoading */ }
-            }
-        }
-    }
-
-    fun dismissVerdictDialog() {
+    fun closeVerdictDialog() {
         _uiState.update { it.copy(showVerdictDialog = false) }
     }
 
-    fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        chatRepository.disconnectFromRoom()
+    fun onReceiveMessage(message: ChatMessage) {
+        _uiState.update { it.copy(messages = it.messages + message) }
     }
 }
-

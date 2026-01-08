@@ -1,211 +1,194 @@
-package com.survivalcoding.ai_court.presentation.chat.screen
-
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.survivalcoding.ai_court.R
-import com.survivalcoding.ai_court.domain.model.WinRate
-import com.survivalcoding.ai_court.presentation.chat.component.ChatBubble
-import com.survivalcoding.ai_court.presentation.chat.component.ChatInput
-import com.survivalcoding.ai_court.presentation.chat.component.VerdictDialog
-import com.survivalcoding.ai_court.presentation.chat.component.WinRateHeader
-import com.survivalcoding.ai_court.presentation.chat.viewmodel.ChatViewModel
+import com.survivalcoding.ai_court.domain.model.ChatMessage
+import com.survivalcoding.ai_court.presentation.chat.component.JudgeConfirmDialog
+import com.survivalcoding.ai_court.presentation.chat.state.ChatUiState
+import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ChatScreenContent(
+    roomCode: String,
+    myUserId: String,
+    uiState: ChatUiState,
+    onNavigateBack: () -> Unit,
+    onInputChange: (String) -> Unit,
+    onSendClick: () -> Unit,
+    onCancelVerdict: () -> Unit,
+    onConfirmVerdict: () -> Unit
+) {
+    val listState = rememberLazyListState()
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .systemBarsPadding()
+            .background(color = AI_COURTTheme.colors.cream)
+    ) {
+        ChatTopBar(
+            roomCode = roomCode,
+            onNavigateBack = onNavigateBack
+        )
+        WinRateHeader(
+            leftName = uiState.opponentNickname,
+            rightName = uiState.myNickname,
+            leftScore = uiState.winRate.userAScore,
+            rightScore = uiState.winRate.userBScore
+        )
+
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            state = listState,
+            contentPadding = PaddingValues(vertical = 12f.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            items(
+                items = uiState.messages,
+                key = { it.id }
+            ) { message ->
+                ChatBubble(
+                    message = message,
+                    isMine = message.senderId == myUserId
+                )
+            }
+        }
+
+        Row(modifier = Modifier.fillMaxWidth()
+            .padding(horizontal =20.dp)) {
+            ChatInput(
+                value = uiState.inputMessage,
+                onValueChange = onInputChange,
+                onSendClick = onSendClick,
+                modifier = Modifier
+                    .padding(end=17.dp)
+                    .weight(1f)
+            )
+            Box(
+                modifier = Modifier
+                    .padding(1.dp)
+                    .size(52.dp) // width + height 한 번에
+                    .clip(CircleShape)
+                    .background(Color(0xFF292D47)),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_send), // 넣을 이미지
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp) // 안쪽 이미지 크기
+                )
+            }
+
+
+        }
+        if (uiState.showVerdictDialog) {
+            JudgeConfirmDialog(
+                onCancel = onCancelVerdict,
+                onConfirm = onConfirmVerdict
+            )
+        }
+    }
+}
+
 @Composable
 fun ChatScreen(
     roomCode: String,
-    userId: String,
-    nickname: String,
-    onNavigateBack: () -> Unit,
-    viewModel: ChatViewModel = hiltViewModel()
+    myUserId: String,
+    viewModel: ChatViewModel = viewModel(),
+    onNavigateBack: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val listState = rememberLazyListState()
+    val uiState by viewModel.uiState.collectAsState()
 
-    // 채팅방 연결
-    LaunchedEffect(roomCode) {
-        viewModel.connectToRoom(roomCode, userId, nickname)
-    }
-
-    // 새 메시지가 오면 스크롤
-    LaunchedEffect(uiState.messages.size) {
-        if (uiState.messages.isNotEmpty()) {
-            listState.animateScrollToItem(uiState.messages.size - 1)
+    ChatScreenContent(
+        roomCode = roomCode,
+        myUserId = myUserId,
+        uiState = uiState,
+        onNavigateBack = onNavigateBack,
+        onInputChange = viewModel::onInputChange,
+        onSendClick = { viewModel.onSendClick(roomCode, myUserId) },
+        onCancelVerdict = viewModel::closeVerdictDialog,
+        onConfirmVerdict = {
+            viewModel.closeVerdictDialog()
+            // 판결 요청 로직
         }
-    }
+    )
+}
 
-    // 판결 다이얼로그
-    if (uiState.showVerdictDialog && uiState.verdict != null) {
-        VerdictDialog(
-            verdict = uiState.verdict!!,
-            onDismiss = { viewModel.dismissVerdictDialog() },
-            onGoToMain = {
-                viewModel.dismissVerdictDialog()
-                onNavigateBack()
-            }
+@Preview(showBackground = true, widthDp = 360, heightDp = 760)
+@Composable
+private fun ChatScreenPreview() {
+    val fakeMessages = listOf(
+        ChatMessage(
+            id = "1",
+            roomCode = "TEST123",
+            senderId = "opponent",
+            senderNickname = "박논리",
+            content = "솔직히 네가 늦은 건 맞잖아\n사과는 해야지",
+            timestamp = System.currentTimeMillis(),
+            isMyMessage = false
+        ),
+        ChatMessage(
+            id = "2",
+            roomCode = "TEST123",
+            senderId = "me",
+            senderNickname = "김논리",
+            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
+            timestamp = System.currentTimeMillis(),
+            isMyMessage = true
+        ),
+        ChatMessage(
+            id = "3",
+            roomCode = "TEST123",
+            senderId = "me",
+            senderNickname = "김논리",
+            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
+            timestamp = System.currentTimeMillis(),
+            isMyMessage = true
         )
-    }
+    )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "⚖️ 이의있오",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                        Text(
-                            text = "방 코드: $roomCode",
-                            color = Color.Gray,
-                            fontSize = 12.sp
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1A1A2E)
-                )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { viewModel.requestVerdict() },
-                containerColor = Color(0xFFFF6B6B),
-                contentColor = Color.White
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                } else {
-                    Icon(
-                        painterResource(R.drawable.ic_gavel),
-                        contentDescription = "판결 요청"
-                    )
-                }
-            }
-        },
-        containerColor = Color.Transparent
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF0F0F1A),
-                            Color(0xFF1A1A2E)
-                        )
-                    )
-                )
-                .padding(paddingValues)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .imePadding()
-            ) {
-                // 승률 게이지
-                WinRateHeader(
-                    myNickname = uiState.myNickname.ifEmpty { "나" },
-                    opponentNickname = uiState.opponentNickname,
-                    winRate = uiState.winRate
-                )
+    val fakeUiState = ChatUiState(
+        messages = fakeMessages,
+        inputMessage = "프리뷰 입력중…",
+        showVerdictDialog = false,
+        myNickname = "김논리",
+        opponentNickname = "박논리"
+    )
 
-                // 채팅 메시지 리스트
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    state = listState
-                ) {
-                    if (uiState.messages.isEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "대화를 시작해보세요!\nAI가 실시간으로 승률을 분석합니다 🎯",
-                                    color = Color.Gray,
-                                    fontSize = 14.sp
-                                )
-                            }
-                        }
-                    }
-
-                    items(
-                        items = uiState.messages,
-                        key = { it.id }
-                    ) { message ->
-                        ChatBubble(message = message)
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(80.dp))
-                    }
-                }
-
-                // 메시지 입력창
-                ChatInput(
-                    value = uiState.inputMessage,
-                    onValueChange = viewModel::onInputMessageChanged,
-                    onSend = viewModel::sendMessage
-                )
-            }
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun ChatInputPreview() {
-    ChatInput(value = "", onValueChange = {}, onSend = {})
-}
-
-@Preview
-@Composable
-private fun WinRateHeaderPreview() {
-    WinRateHeader(
-        myNickname = "나",
-        opponentNickname = "상대방",
-        winRate = WinRate(50, 50)
+    ChatScreenContent(
+        roomCode = "TEST123",
+        myUserId = "me",
+        uiState = fakeUiState,
+        onNavigateBack = {},
+        onInputChange = {},
+        onSendClick = {},
+        onCancelVerdict = {},
+        onConfirmVerdict = {}
     )
 }

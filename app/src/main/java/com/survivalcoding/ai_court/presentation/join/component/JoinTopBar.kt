@@ -27,7 +27,7 @@ fun JoinTopBar(modifier: Modifier = Modifier) {
     ) {
 
         Text(
-            text = "피고출석",
+            text = "법정\n피고출석",
             modifier = Modifier.align(Alignment.Center),
             style = AI_COURTTheme.typography.Body_3,
             color = AI_COURTTheme.colors.white,

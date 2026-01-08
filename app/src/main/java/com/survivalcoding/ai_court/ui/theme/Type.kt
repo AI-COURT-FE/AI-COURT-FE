@@ -1,7 +1,6 @@
-package com.survivalcoding.ai_court.ui.theme
+    package com.survivalcoding.ai_court.ui.theme
 
 
-import android.R.attr.fontFamily
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
@@ -11,7 +10,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.survivalcoding.ai_court.R
-import retrofit2.http.Body
 
 val NanumFontLight = FontFamily(Font(R.font.nanumsquare_l))
 val NanumFontRegular = FontFamily(Font(R.font.nanumsquare_r))
@@ -22,6 +20,8 @@ data class AI_CourtTypography(
     val Caption_regular: TextStyle,
     val Caption_tight: TextStyle, // 벌칙 들어주기 설명: 패소자 김논리님은 본 판결에 ...
     val Caption_3: TextStyle,
+    val Caption_4: TextStyle,
+
     val Title_1: TextStyle,
     val Title_2: TextStyle,
     val Body_1: TextStyle,
@@ -50,6 +50,12 @@ val defaultAI_CourtTypography = AI_CourtTypography(
         lineHeight = 30.sp,
         letterSpacing = (-0.0025).em,
     ),
+    Caption_4 = TextStyle(
+            fontSize = 14.sp,
+            lineHeight = 22.sp,
+            fontFamily = NanumFontRegular,
+            fontWeight = FontWeight(700)
+        ),
     Title_1 = TextStyle(
         fontFamily = OktapbangFont,
         fontWeight = FontWeight.Normal,
