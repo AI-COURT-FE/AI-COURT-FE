@@ -11,12 +11,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -57,7 +65,7 @@ private fun ChatScreenContent(
     Column(
         Modifier
             .fillMaxSize()
-            .systemBarsPadding()
+            .statusBarsPadding() // 위만
             .background(color = AI_COURTTheme.colors.cream)
     ) {
         ChatTopBar(
@@ -71,11 +79,32 @@ private fun ChatScreenContent(
         )
 
         Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
         ) {
+            // 메시지 리스트 (배너 높이만큼 위 contentPadding 확보)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(
+                    top = 12.dp + 6.dp + 26.dp,   // (리스트 상단 여백) + (배너 top padding) + (배너 높이)
+                    bottom = 12.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                items(items = uiState.messages, key = { it.id }) { message ->
+                    ChatBubble(
+                        message = message,
+                        isMine = message.isMyMessage
+                    )
+                }
+            }
+
+            // 배너: 스크롤 영역 위에 고정 (탑바처럼)
             Row(
                 modifier = Modifier
+                    .align(Alignment.TopCenter)
                     .padding(top = 6.dp)
                     .height(26.dp)
                     .background(
@@ -85,7 +114,7 @@ private fun ChatScreenContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "AI 판사가 실시간 분석 중입니다.",
+                    text = "AI 판사가 실시간 분석 중입니다.",
                     style = AI_COURTTheme.typography.Caption_3,
                     color = AI_COURTTheme.colors.white,
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -93,26 +122,14 @@ private fun ChatScreenContent(
             }
         }
 
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            state = listState,
-            contentPadding = PaddingValues(vertical = 12f.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            items(
-                items = uiState.messages, key = { it.id }) { message ->
-                ChatBubble(
-                    message = message, isMine = message.isMyMessage
-                )
-            }
-        }
+        val bottomInsets = WindowInsets.ime.union(WindowInsets.navigationBars)
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .windowInsetsPadding(bottomInsets)   // 키보드/네비바 모두 피함 (겹침 해결)
                 .padding(horizontal = 20.dp)
+                .padding(bottom = 20.dp)             // 키보드 위로도 20dp 여유
         ) {
             ChatInput(
                 value = uiState.inputMessage,
@@ -132,11 +149,12 @@ private fun ChatScreenContent(
             ) {
                 Image(
                     painter = painterResource(R.drawable.ic_send),
-                    contentDescription = null, modifier = Modifier.size(28.dp)
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp)
                 )
             }
         }
-        
+
         if (uiState.showVerdictDialog) {
             JudgeConfirmDialog(
                 onCancel = onCancelVerdict, onConfirm = onConfirmVerdict
@@ -199,6 +217,46 @@ private fun ChatScreenPreview() {
             isMyMessage = true
         ), ChatMessage(
             id = "3",
+            roomCode = "TEST123",
+            senderId = "me",
+            senderNickname = "김논리",
+            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
+            timestamp = System.currentTimeMillis(),
+            isMyMessage = true
+        ), ChatMessage(
+            id = "4",
+            roomCode = "TEST123",
+            senderId = "me",
+            senderNickname = "김논리",
+            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
+            timestamp = System.currentTimeMillis(),
+            isMyMessage = true
+        ), ChatMessage(
+            id = "5",
+            roomCode = "TEST123",
+            senderId = "me",
+            senderNickname = "김논리",
+            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
+            timestamp = System.currentTimeMillis(),
+            isMyMessage = true
+        ), ChatMessage(
+            id = "6",
+            roomCode = "TEST123",
+            senderId = "me",
+            senderNickname = "김논리",
+            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
+            timestamp = System.currentTimeMillis(),
+            isMyMessage = true
+        ), ChatMessage(
+            id = "7",
+            roomCode = "TEST123",
+            senderId = "me",
+            senderNickname = "김논리",
+            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
+            timestamp = System.currentTimeMillis(),
+            isMyMessage = true
+        ), ChatMessage(
+            id = "8",
             roomCode = "TEST123",
             senderId = "me",
             senderNickname = "김논리",
