@@ -11,6 +11,7 @@ import com.survivalcoding.ai_court.data.model.response.CreateChatRoomResponseDto
 import com.survivalcoding.ai_court.data.model.response.FinalVerdictResponse
 import com.survivalcoding.ai_court.data.model.response.JoinChatRoomResponseDto
 import com.survivalcoding.ai_court.data.model.response.VerdictResponse
+import kotlinx.serialization.json.JsonElement
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -32,13 +33,13 @@ interface RoomApiService {
     @POST("chat/room/create")
     suspend fun createChatRoom(
         // 서버 스펙이 body를 요구하면 여기에 request dto 추가
-    ): BaseResponse<CreateChatRoomResponseDto>
+    ): BaseResponse<JsonElement>
 
     // 채팅방 입장 (초대 코드)
     @POST("chat/room/join")
     suspend fun joinChatRoom(
         @Body body: JoinChatRoomRequestDto
-    ): BaseResponse<JoinChatRoomResponseDto>
+    ): BaseResponse<JsonElement>
 
     // 메시지 목록 조회
     @GET("chat/room/{chatRoomId}/messages")
