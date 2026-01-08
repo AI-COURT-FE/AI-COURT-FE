@@ -1,3 +1,9 @@
+package com.survivalcoding.ai_court.presentation.chat.screen
+
+import ChatBubble
+import ChatInput
+import ChatTopBar
+import WinRateHeader
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,17 +33,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.survivalcoding.ai_court.R
 import com.survivalcoding.ai_court.domain.model.ChatMessage
 import com.survivalcoding.ai_court.presentation.chat.component.JudgeConfirmDialog
 import com.survivalcoding.ai_court.presentation.chat.state.ChatUiState
+import com.survivalcoding.ai_court.presentation.chat.viewmodel.ChatViewModel
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
 @Composable
 private fun ChatScreenContent(
     roomCode: String,
-    myUserId: String,
     uiState: ChatUiState,
     onNavigateBack: () -> Unit,
     onInputChange: (String) -> Unit,
@@ -81,7 +88,7 @@ private fun ChatScreenContent(
                     "AI 판사가 실시간 분석 중입니다.",
                     style = AI_COURTTheme.typography.Caption_3,
                     color = AI_COURTTheme.colors.white,
-                    modifier = Modifier.padding(horizontal = 12.dp) // 내부 여백 추천
+                    modifier = Modifier.padding(horizontal = 12.dp)
                 )
             }
         }
@@ -97,7 +104,7 @@ private fun ChatScreenContent(
             items(
                 items = uiState.messages, key = { it.id }) { message ->
                 ChatBubble(
-                    message = message, isMine = message.senderId == myUserId
+                    message = message, isMine = message.isMyMessage
                 )
             }
         }
@@ -118,19 +125,18 @@ private fun ChatScreenContent(
             Box(
                 modifier = Modifier
                     .padding(1.dp)
-                    .size(52.dp) // width + height 한 번에
+                    .size(52.dp)
                     .clip(CircleShape)
                     .background(Color(0xFF292D47)),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(R.drawable.ic_send), // 넣을 이미지
-                    contentDescription = null, modifier = Modifier.size(28.dp) // 안쪽 이미지 크기
+                    painter = painterResource(R.drawable.ic_send),
+                    contentDescription = null, modifier = Modifier.size(28.dp)
                 )
             }
-
-
         }
+        
         if (uiState.showVerdictDialog) {
             JudgeConfirmDialog(
                 onCancel = onCancelVerdict, onConfirm = onConfirmVerdict
@@ -143,23 +149,32 @@ private fun ChatScreenContent(
 fun ChatScreen(
     roomCode: String,
     myUserId: String,
-    viewModel: ChatViewModel = viewModel(),
+    myNickname: String = "나",
+    opponentNickname: String = "상대방",
+    viewModel: ChatViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // 화면 진입 시 한 번만 초기화
+    LaunchedEffect(roomCode, myUserId) {
+        if (roomCode.isNotBlank() && myUserId.isNotBlank()) {
+            viewModel.initialize(roomCode, myUserId, myNickname, opponentNickname)
+        }
+    }
 
     ChatScreenContent(
         roomCode = roomCode,
-        myUserId = myUserId,
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         onInputChange = viewModel::onInputChange,
-        onSendClick = { viewModel.onSendClick(roomCode, myUserId) },
+        onSendClick = viewModel::onSendClick,
         onCancelVerdict = viewModel::closeVerdictDialog,
         onConfirmVerdict = {
             viewModel.closeVerdictDialog()
             // 판결 요청 로직
-        })
+        }
+    )
 }
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 760)
@@ -203,11 +218,11 @@ private fun ChatScreenPreview() {
 
     ChatScreenContent(
         roomCode = "TEST123",
-        myUserId = "me",
         uiState = fakeUiState,
         onNavigateBack = {},
         onInputChange = {},
         onSendClick = {},
         onCancelVerdict = {},
-        onConfirmVerdict = {})
+        onConfirmVerdict = {}
+    )
 }
