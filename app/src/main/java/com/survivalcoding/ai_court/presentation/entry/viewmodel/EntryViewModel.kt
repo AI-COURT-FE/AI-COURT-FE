@@ -85,14 +85,25 @@ class EntryViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             createdRoomCode = room.roomCode,
-                            isWaitingForOpponent = true
+                            isWaitingForOpponent = true,
+
+                            // EntryScreen이 이 이벤트를 받으면 Waiting으로 이동함
+                            navigateToChat = NavigateToChatEvent(
+                                roomCode = room.roomCode,
+                                userId = userId,
+                                nickname = it.nickname
+                            )
                         )
                     }
-                    observeRoom(room.roomCode)
+
+                    // Entry 화면은 Waiting으로 이동하면서 popUpTo로 사라짐 → 여기서 observeRoom 돌려도 의미 없음
+                    // observeRoom(room.roomCode)
                 }
+
                 is Resource.Error -> {
                     _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
                 }
+
                 is Resource.Loading -> {}
             }
         }
@@ -146,15 +157,19 @@ class EntryViewModel @Inject constructor(
                         )
                     }
                 }
+
                 is Resource.Error -> {
                     _uiState.update {
                         it.copy(isLoading = false, errorMessage = result.message)
                     }
                 }
-                is Resource.Loading -> { /* handled by isLoading state */ }
+
+                is Resource.Loading -> { /* handled by isLoading state */
+                }
             }
         }
     }
+
     fun onNavigationHandled() {
         _uiState.update { it.copy(navigateToChat = null) }
     }
@@ -167,6 +182,7 @@ class EntryViewModel @Inject constructor(
             )
         }
     }
+
     fun debugEnterRoom() {
         _uiState.update {
             it.copy(

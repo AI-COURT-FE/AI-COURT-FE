@@ -2,55 +2,48 @@ package com.survivalcoding.ai_court.presentation.waiting.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.survivalcoding.ai_court.domain.model.Room
-import com.survivalcoding.ai_court.domain.model.User
+import com.survivalcoding.ai_court.domain.repository.RoomRepository
+import com.survivalcoding.ai_court.presentation.waiting.state.WaitingUiEvent
 import com.survivalcoding.ai_court.presentation.waiting.state.WaitingUiState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class WaitingViewModel(
-    // TODO: 실제 데이터 가져오는 useCase/repository 주입
-    // private val roomRepository: RoomRepository
+@HiltViewModel
+class WaitingViewModel @Inject constructor(
+    private val roomRepository: RoomRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WaitingUiState(isLoading = true))
-    val uiState: StateFlow<WaitingUiState> = _uiState.asStateFlow()
+    val uiState = _uiState.asStateFlow()
 
-    fun loadRoom(roomCode: String) {
+    private val _events = MutableSharedFlow<WaitingUiEvent>(extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
+
+    private var started = false
+
+    fun start(roomCode: String) {
+        if (started) return
+        started = true
+
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            runCatching {
-                // TODO: 서버에서 room 가져오기
-                // roomRepository.getRoom(roomCode)
-                // 임시: 더미
-                Room(
-                    roomCode = roomCode,
-                    hostUser = User(
-                        sessionId = "local_host",
-                        nickname = "host"), // TODO: 네 프로젝트 User 생성자에 맞게 수정
-                    guestUser = null,
-                    isReady = false
-                )
-            }.onSuccess { room ->
+            // room 상태를 계속 관찰 (나중에 WebSocket 붙으면 여기서 바로 반응)
+            roomRepository.observeRoom(roomCode).collectLatest { room ->
                 _uiState.update { it.copy(room = room, isLoading = false) }
-            }.onFailure { e ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+
+                // 상대방 들어와서 ready 되면 Chat으로 이동 이벤트
+                if (room.isReady && room.guestUser != null) {
+                    _events.tryEmit(WaitingUiEvent.NavigateToChat)
+                }
             }
-        }
-    }
-
-    fun setRoom(room: Room) {
-        _uiState.update { it.copy(room = room, isLoading = false, errorMessage = null) }
-    }
-
-    // 예: 상대 들어와서 ready되면 채팅으로 넘어갈 때 쓸 수도 있음
-    fun markReady() {
-        _uiState.update { state ->
-            state.copy(room = state.room?.copy(isReady = true))
         }
     }
 }

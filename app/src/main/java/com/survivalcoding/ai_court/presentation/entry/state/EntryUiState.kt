@@ -9,12 +9,12 @@ data class EntryUiState(
     val errorMessage: String? = null,
     val createdRoomCode: String? = null,
     val isWaitingForOpponent: Boolean = false,
-    val navigateToChat: NavigateToChatEvent? = null
+
+    val navigateToChat: NavigateToChatEvent? = null,
 )
 
 data class NavigateToChatEvent(
     val roomCode: String,
     val userId: String,
-    val nickname: String
+    val nickname: String,
 )
-
