@@ -1,13 +1,17 @@
 package com.survivalcoding.ai_court.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.survivalcoding.ai_court.presentation.chat.screen.ChatScreen
+import com.survivalcoding.ai_court.presentation.chat.viewmodel.ChatViewModel
 import com.survivalcoding.ai_court.presentation.entry.screen.EntryScreen
 import com.survivalcoding.ai_court.presentation.join.screen.JoinScreen
 import com.survivalcoding.ai_court.presentation.verdict.screen.VerdictScreen
@@ -92,14 +96,19 @@ fun CourtNavGraph(
 
         composable(
             route = Route.Verdict.route,
-            arguments = listOf(navArgument("roomCode") { type = NavType.StringType })
+            arguments = listOf(navArgument("roomCode") { type = NavType.StringType },)
         ) { backStackEntry ->
             val roomCode = backStackEntry.arguments?.getString("roomCode").orEmpty()
+            val chatViewModel: ChatViewModel = hiltViewModel()
+            val chatState by chatViewModel.uiState.collectAsStateWithLifecycle()
 
             VerdictScreen(
                 roomCode = roomCode,
+                leftName = chatState.myNickname,
+                rightName = chatState.opponentNickname ?: "상대",
                 onNavigateBack = { navController.popBackStack() },
-                onGoToMain = {
+                onShareVerdict = {},
+                onGoEntry = {
                     navController.navigate(Route.Entry.route) {
                         popUpTo(Route.Entry.route) { inclusive = true }
                         launchSingleTop = true

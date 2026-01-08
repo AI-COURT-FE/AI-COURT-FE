@@ -22,24 +22,24 @@ class VerdictViewModel @Inject constructor(
     val uiState: StateFlow<VerdictUiState> = _uiState.asStateFlow()
 
     /**
-     * "최종 판결문" 1회 요청용
+     * 최종 판결문 1회 요청용
      * 실시간 verdict는 여기서 다루지 않음
      */
-    fun requestFinalVerdict(roomCode: String) {
+    fun loadFinalVerdict(roomCode: String, leftName: String, rightName: String) {
         if (roomCode.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "roomCode가 비어 있음") }
+            _uiState.update { it.copy(isLoading = false, errorMessage = "roomCode가 비어있습니다.") }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            when (val result = finalVerdictRepository.requestFinalVerdict(roomCode)) {
+            when (val res = finalVerdictRepository.requestFinalVerdict(roomCode)) {
                 is Resource.Success -> {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            finalVerdict = result.data,
+                            finalVerdict = res.data,
                             errorMessage = null
                         )
                     }
@@ -49,23 +49,24 @@ class VerdictViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.message ?: "최종 판결 요청에 실패했습니다."
+                            errorMessage = res.message ?: "최종 판결 요청 실패"
                         )
                     }
                 }
 
                 is Resource.Loading -> {
-                    // isLoading으로 처리
+                    // Loading 타입이 있는 Resource면 여기로 들어올 수 있음
+                    _uiState.update { it.copy(isLoading = true) }
                 }
             }
         }
     }
 
-    fun clearVerdict() {
-        _uiState.update { it.copy(finalVerdict = null) }
-    }
-
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    fun clearVerdict() {
+        _uiState.update { it.copy(finalVerdict = null) }
     }
 }
