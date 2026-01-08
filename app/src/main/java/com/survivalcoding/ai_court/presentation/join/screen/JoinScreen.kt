@@ -17,6 +17,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,6 +36,7 @@ fun JoinScreen(
     onNavigateBack: () -> Unit,
     viewModel: EntryViewModel = hiltViewModel()
 ){
+    var roomCode by rememberSaveable { mutableStateOf("") }
     val scrollState = rememberScrollState()
     Column (
         modifier= Modifier
@@ -44,7 +49,10 @@ fun JoinScreen(
     ){
         JoinTopBar()
         Spacer(modifier= Modifier.height(70.dp))
-        JoinInputBox()
+        JoinInputBox(
+            roomCode = roomCode,
+            onRoomCodeChange = { roomCode = it }
+        )
 
         Spacer(modifier= Modifier.height(105.dp))
         Row(
