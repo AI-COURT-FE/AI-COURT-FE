@@ -13,6 +13,7 @@ import com.survivalcoding.ai_court.domain.model.WinRate
 import com.survivalcoding.ai_court.domain.repository.ChatRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -20,25 +21,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
+import org.hildan.krossbow.stomp.StompClient
+import org.hildan.krossbow.stomp.StompSession
+import org.hildan.krossbow.stomp.frame.FrameBody
+import org.hildan.krossbow.stomp.frame.StompFrame
+import org.hildan.krossbow.stomp.headers.StompSendHeaders
+import org.hildan.krossbow.stomp.headers.StompSubscribeHeaders
+import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import java.text.SimpleDateFormat
 import java.util.Locale
 import javax.inject.Inject
 
-// WebSocket 이벤트 구조 (내부 통신용)
-@Serializable
-private data class WebSocketEvent(
-    val type: String,
-    val payload: String
-)
-
-// WinRate 응답 (WebSocket용)
-@Serializable
+@kotlinx.serialization.Serializable
 private data class WinRateResponse(
     val userAScore: Int,
     val userBScore: Int
@@ -47,82 +42,132 @@ private data class WinRateResponse(
 }
 
 class ChatRepositoryImpl @Inject constructor(
-    private val okHttpClient: OkHttpClient,
     private val roomApiService: RoomApiService,
     private val json: Json
 ) : ChatRepository {
 
-    private var webSocket: WebSocket? = null
+    private val stompClient = StompClient(OkHttpWebSocketClient())
+    private var stompSession: StompSession? = null
+
+    // 구독은 Subscription 객체가 아니라 "collect Job"으로 관리
+    private var messageJob: Job? = null
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val _messages = MutableSharedFlow<ChatMessageDto>(replay = 100)
     private val _winRate = MutableStateFlow(WinRateResponse(50, 50))
+    private val _isConnected = MutableStateFlow(false)
+    private val _error = MutableStateFlow<String?>(null)
 
     private var currentRoomCode: String? = null
-    private var currentUserId: String? = null
+    private var currentChatRoomId: Long? = null
+    private var currentUserId: Long? = null
 
     override fun connectToRoom(roomCode: String, userId: String) {
-        currentRoomCode = roomCode
-        currentUserId = userId
+        scope.launch {
+            try {
+                currentRoomCode = roomCode
+                currentUserId = userId.toLongOrNull()
 
-        val wsUrl = BuildConfig.BASE_URL.replace("http", "ws") + "ws/chat/$roomCode?user_id=$userId"
-        val request = Request.Builder().url(wsUrl).build()
-
-        webSocket = okHttpClient.newWebSocket(request, object : WebSocketListener() {
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                scope.launch { handleMessage(text) }
-            }
-        })
-    }
-
-    private suspend fun handleMessage(text: String) {
-        try {
-            val event = json.decodeFromString<WebSocketEvent>(text)
-            when (event.type) {
-                "MESSAGE" -> {
-                    val message = json.decodeFromString<ChatMessageDto>(event.payload)
-                    _messages.emit(message)
+                // 지금은 roomCode가 chatRoomId(숫자)라고 가정
+                currentChatRoomId = roomCode.toLongOrNull()
+                val chatRoomId = currentChatRoomId
+                if (chatRoomId == null) {
+                    _error.value = "Invalid room code: $roomCode (must be numeric)"
+                    return@launch
                 }
-                "WIN_RATE" -> {
-                    val winRate = json.decodeFromString<WinRateResponse>(event.payload)
-                    _winRate.value = winRate
+
+                _isConnected.value = false
+                _error.value = null
+
+                // BASE_URL -> ws/wss 변환 + 문서대로 /ws
+                val httpBase = BuildConfig.BASE_URL.trimEnd('/')
+                val wsBase = httpBase
+                    .replaceFirst("https://", "wss://")
+                    .replaceFirst("http://", "ws://")
+                val wsUrl = "$wsBase/ws"
+
+                // STOMP 연결
+                stompSession = stompClient.connect(wsUrl)
+                _isConnected.value = true
+
+                // 기존 구독 정리
+                messageJob?.cancel()
+                messageJob = null
+
+                // 메시지 구독(Flow collect)
+                val headers = StompSubscribeHeaders(destination = "/topic/chatroom/$chatRoomId")
+                val session = stompSession ?: throw IllegalStateException("No STOMP session")
+
+                messageJob = scope.launch {
+                    session
+                        .subscribe(headers) // Flow<StompFrame.Message>
+                        .collect { frame: StompFrame.Message ->
+                            try {
+                                val text = (frame.body as? FrameBody.Text)?.text ?: return@collect
+                                val dto = json.decodeFromString<ChatMessageDto>(text)
+                                _messages.emit(dto)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                _error.value = "Failed to parse message: ${e.message}"
+                            }
+                        }
                 }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _error.value = "Connection failed: ${e.message}"
+                _isConnected.value = false
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
     override fun disconnectFromRoom() {
-        webSocket?.close(1000, "User disconnected")
-        webSocket = null
+        scope.launch {
+            try {
+                messageJob?.cancel()
+                messageJob = null
+
+                stompSession?.disconnect()
+                stompSession = null
+
+                _isConnected.value = false
+                currentRoomCode = null
+                currentChatRoomId = null
+                currentUserId = null
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _error.value = "Disconnect error: ${e.message}"
+            }
+        }
     }
 
     override fun sendMessage(content: String): Resource<Unit> {
-        val roomCode = currentRoomCode ?: return Resource.Error("Not connected")
-        val userId = currentUserId ?: return Resource.Error("Not connected")
+        val chatRoomId = currentChatRoomId ?: return Resource.Error("Not connected")
+        if (!_isConnected.value) return Resource.Error("Not connected to WebSocket")
 
-        val request = SendMessageRequestDto(content)
-        val event = WebSocketEvent(
-            type = "MESSAGE",
-            payload = json.encodeToString(SendMessageRequestDto.serializer(), request)
+        val requestJson = json.encodeToString(
+            SendMessageRequestDto.serializer(),
+            SendMessageRequestDto(content)
         )
 
-        return if (webSocket?.send(
-                json.encodeToString(
-                    WebSocketEvent.serializer(), event
-                )
-            ) == true
-        ) {
-            Resource.Success(Unit)
-        } else {
-            Resource.Error("Failed to send")
+        scope.launch {
+            try {
+                val session = stompSession ?: throw IllegalStateException("No STOMP session")
+                val headers = StompSendHeaders(destination = "/app/chatroom/$chatRoomId")
+                session.send(headers, FrameBody.Text(requestJson))
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _error.value = "Failed to send message: ${e.message}"
+            }
         }
+
+        return Resource.Success(Unit)
     }
 
     override fun observeMessages(): Flow<List<ChatMessage>> {
         return _messages.runningFold(emptyList()) { acc, dto ->
-            acc + dto.toDomain(currentUserId ?: "")
+            acc + dto.toDomain(currentUserId?.toString().orEmpty())
         }
     }
 
@@ -144,6 +189,7 @@ class ChatRepositoryImpl @Inject constructor(
     }
 
     private fun ChatMessageDto.toDomain(userId: String): ChatMessage {
+        // createdAt이 "2026-01-08T12:00:00"처럼 오프셋 없을 수 있어 LocalDateTime 파싱
         val timestamp = runCatching {
             val sdf = SimpleDateFormat(
                 "yyyy-MM-dd'T'HH:mm:ss",
@@ -154,14 +200,17 @@ class ChatRepositoryImpl @Inject constructor(
             System.currentTimeMillis()
         }
 
+
+        val isMyMessage = senderId?.toString() == userId
+
         return ChatMessage(
             id = messageId?.toString() ?: "",
-            roomCode = currentRoomCode ?: "",
-            senderId = senderId?.toString() ?: "",
+            roomCode = currentRoomCode.orEmpty(),
+            senderId = senderId?.toString().orEmpty(),
             senderNickname = senderNickname,
             content = content,
             timestamp = timestamp,
-            isMyMessage = senderId?.toString() == userId
+            isMyMessage = isMyMessage
         )
     }
 
