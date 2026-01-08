@@ -54,7 +54,9 @@ fun JoinScreen(
             onClick = {
                 viewModel.joinRoom()
             },
-            height = 100.dp
+            modifier = Modifier.padding(horizontal = 32.dp),
+            height = 100.dp,
+            style = AI_COURTTheme.typography.Body_1
         )
 
         Spacer(modifier= Modifier.height(112.dp))

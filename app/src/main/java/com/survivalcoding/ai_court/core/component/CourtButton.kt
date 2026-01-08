@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -40,10 +41,11 @@ fun CourtButton(
     contentColor: Color = AI_COURTTheme.colors.softWhite,
     showShadow: Boolean = true,
     showIcon: Boolean = false,
+    style: TextStyle = AI_COURTTheme.typography.Body_2
 ) {
     val shape = RoundedCornerShape(16.dp)
 
-    Box(modifier = modifier.fillMaxWidth()) {
+    Box(modifier = Modifier.fillMaxWidth().then(modifier)) {
 
         if (showShadow) {
             Box(
@@ -90,7 +92,7 @@ fun CourtButton(
                 }
                 Text(
                     text = text,
-                    style = AI_COURTTheme.typography.Body_2
+                    style = style
                 )
             }
         }
