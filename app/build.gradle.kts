@@ -23,7 +23,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "BASE_URL", properties["base.url"].toString())
+//        buildConfigField("String", "BASE_URL", properties["base.url"].toString())
+        val baseUrl = (properties["base.url"] as String?)
+            ?.trim()
+            ?.let { if (it.endsWith("/")) it else "$it/" }
+            ?: "http://10.0.2.2:8080/"
+
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
 
     buildTypes {
