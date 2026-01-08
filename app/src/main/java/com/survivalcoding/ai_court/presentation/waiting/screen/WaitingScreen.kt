@@ -22,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.survivalcoding.ai_court.presentation.waiting.component.InfoBanner
 import com.survivalcoding.ai_court.presentation.waiting.component.WaitingBox
+import com.survivalcoding.ai_court.presentation.waiting.state.WaitingUiEvent
 import com.survivalcoding.ai_court.presentation.waiting.viewmodel.WaitingViewModel
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
@@ -29,7 +30,8 @@ import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 @Composable
 fun WaitingScreen(
     roomCode: String,
-    onNavigateToChat: () -> Unit,
+    chatRoomId: Long,
+    onNavigateToChat: (chatRoomId: Long) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WaitingViewModel = hiltViewModel()
@@ -38,13 +40,15 @@ fun WaitingScreen(
     val scrollState =  rememberScrollState()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(roomCode) {
-        viewModel.start(roomCode)
+    LaunchedEffect(roomCode, chatRoomId) {
+        viewModel.start(roomCode, chatRoomId)
     }
 
     LaunchedEffect(Unit) {
-        viewModel.events.collect {
-            onNavigateToChat()
+        viewModel.events.collect { event ->
+            when (event) {
+                is WaitingUiEvent.NavigateToChat -> onNavigateToChat(event.chatRoomId)
+            }
         }
     }
 

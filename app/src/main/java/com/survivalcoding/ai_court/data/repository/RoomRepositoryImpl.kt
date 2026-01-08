@@ -75,7 +75,7 @@ class RoomRepositoryImpl @Inject constructor(
 
             if (response.success) {
                 val dto = json.decodeFromJsonElement(JoinChatRoomResponseDto.serializer(), response.result)
-                val room = dto.toDomain(guestNickname)
+                val room = dto.toDomain(guestNickname, roomCode)
                 _currentRoom.value = room
                 Resource.Success(room)
             } else {
@@ -95,7 +95,8 @@ class RoomRepositoryImpl @Inject constructor(
 
     private fun CreateChatRoomResponseDto.toDomain(hostNickname: String): Room {
         return Room(
-            roomCode = participantCode, // 참가자 코드를 roomCode로 사용
+            roomCode = participantCode, // 초대 코드 (사용자에게 표시)
+            chatRoomId = chatRoomId,    // WebSocket 연결용 ID
             hostUser = User(
                 sessionId = chatRoomId.toString(),
                 nickname = hostNickname
@@ -105,9 +106,10 @@ class RoomRepositoryImpl @Inject constructor(
         )
     }
 
-    private fun JoinChatRoomResponseDto.toDomain(guestNickname: String): Room {
+    private fun JoinChatRoomResponseDto.toDomain(guestNickname: String, inviteCode: String): Room {
         return Room(
-            roomCode = chatRoomId.toString(),
+            roomCode = inviteCode,      // 입력한 초대 코드 유지
+            chatRoomId = chatRoomId,    // WebSocket 연결용 ID
             hostUser = User(
                 sessionId = "",
                 nickname = "" // 입장 시에는 호스트 정보를 알 수 없음

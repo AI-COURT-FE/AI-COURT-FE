@@ -32,8 +32,8 @@ fun CourtNavGraph(
     ) {
         composable(route = Route.Entry.route) {
             EntryScreen(
-                onNavigateToWaiting = { roomCode, userId, nickname ->
-                    navController.navigate(Route.Waiting.createRoute(roomCode)) {
+                onNavigateToWaiting = { roomCode, chatRoomId, userId, nickname ->
+                    navController.navigate(Route.Waiting.createRoute(roomCode, chatRoomId)) {
                         popUpTo(Route.Entry.route) { inclusive = true }
                     }
                 },
@@ -54,8 +54,8 @@ fun CourtNavGraph(
 
             JoinScreen(
                 nickname = entryState.nickname,
-                onJoinSuccess = { roomCode ->
-                    navController.navigate(Route.Chat.createRoute(roomCode)) {
+                onJoinSuccess = { roomCode, chatRoomId ->
+                    navController.navigate(Route.Chat.createRoute(roomCode, chatRoomId)) {
                         popUpTo(Route.Join.route) { inclusive = true }
                     }
                 },
@@ -68,18 +68,17 @@ fun CourtNavGraph(
             route = Route.Chat.route,
             arguments = listOf(
                 navArgument("roomCode") { type = NavType.StringType },
-//                navArgument("userId") { type = NavType.StringType },
-//                navArgument("nickname") { type = NavType.StringType }
+                navArgument("chatRoomId") { type = NavType.LongType }
             )
         ) { backStackEntry ->
             val roomCode = backStackEntry.arguments?.getString("roomCode") ?: ""
-//            val userId = backStackEntry.arguments?.getString("userId") ?: ""
-//            val nickname = backStackEntry.arguments?.getString("nickname") ?: ""
+            val chatRoomId = backStackEntry.arguments?.getLong("chatRoomId") ?: 0L
             val userId = ""
             val nickname = ""
 
             ChatScreen(
                 roomCode = roomCode,
+                chatRoomId = chatRoomId,
                 myUserId = userId,
                 onNavigateBack = {
                     navController.navigate(Route.Entry.route) {
@@ -92,14 +91,19 @@ fun CourtNavGraph(
 
         composable(
             route = Route.Waiting.route,
-            arguments = listOf(navArgument("roomCode") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("roomCode") { type = NavType.StringType },
+                navArgument("chatRoomId") { type = NavType.LongType }
+            )
         ) { backStackEntry ->
             val roomCode = backStackEntry.arguments?.getString("roomCode").orEmpty()
+            val chatRoomId = backStackEntry.arguments?.getLong("chatRoomId") ?: 0L
 
             WaitingScreen(
                 roomCode = roomCode,
-                onNavigateToChat = {
-                    navController.navigate(Route.Chat.createRoute(roomCode)) {
+                chatRoomId = chatRoomId,
+                onNavigateToChat = { navigateChatRoomId ->
+                    navController.navigate(Route.Chat.createRoute(roomCode, navigateChatRoomId)) {
                         popUpTo(Route.Waiting.route) { inclusive = true }
                     }
                 },

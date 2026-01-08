@@ -90,6 +90,7 @@ class EntryViewModel @Inject constructor(
                             // EntryScreen이 이 이벤트를 받으면 Waiting으로 이동함
                             navigateToChat = NavigateToChatEvent(
                                 roomCode = room.roomCode,
+                                chatRoomId = room.chatRoomId,
                                 userId = userId,
                                 nickname = it.nickname
                             )
@@ -118,6 +119,7 @@ class EntryViewModel @Inject constructor(
                             isWaitingForOpponent = false,
                             navigateToChat = NavigateToChatEvent(
                                 roomCode = roomCode,
+                                chatRoomId = room.chatRoomId,
                                 userId = userId,
                                 nickname = _uiState.value.nickname
                             )
@@ -146,10 +148,13 @@ class EntryViewModel @Inject constructor(
 
             when (val result = roomRepository.joinRoom(roomCode, nickname)) {
                 is Resource.Success -> {
+
+                    val chatRoomId = result.data.chatRoomId
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             navigateToChat = NavigateToChatEvent(
+                                chatRoomId = chatRoomId,
                                 roomCode = roomCode,
                                 userId = userId,
                                 nickname = nickname
@@ -188,6 +193,7 @@ class EntryViewModel @Inject constructor(
             it.copy(
                 navigateToChat = NavigateToChatEvent(
                     roomCode = "TEST123",
+                    chatRoomId = 1L, // 테스트용 ID
                     userId = "testUser",
                     nickname = "테스터"
                 )

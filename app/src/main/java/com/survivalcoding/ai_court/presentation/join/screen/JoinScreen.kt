@@ -39,7 +39,7 @@ import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 @Composable
 fun JoinScreen(
     nickname: String,
-    onJoinSuccess: (roomCode: String) -> Unit,
+    onJoinSuccess: (roomCode: String, chatRoomId: Long) -> Unit,
     onNavigateBack: () -> Unit,
     viewModel: JoinViewModel = hiltViewModel()
 ) {
@@ -52,7 +52,7 @@ fun JoinScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is JoinUiEvent.NavigateToChat -> onJoinSuccess(event.roomCode)
+                is JoinUiEvent.NavigateToChat -> onJoinSuccess(event.roomCode, event.chatRoomId)
             }
         }
     }

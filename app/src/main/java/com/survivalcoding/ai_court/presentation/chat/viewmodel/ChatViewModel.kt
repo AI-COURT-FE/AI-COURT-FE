@@ -2,7 +2,6 @@ package com.survivalcoding.ai_court.presentation.chat.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.survivalcoding.ai_court.domain.model.ChatMessage
 import com.survivalcoding.ai_court.domain.repository.ChatRepository
 import com.survivalcoding.ai_court.presentation.chat.state.ChatUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,10 +22,12 @@ class ChatViewModel @Inject constructor(
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     private var currentRoomCode: String? = null
+    private var currentChatRoomId: Long? = null
     private var currentUserId: String? = null
 
-    fun initialize(roomCode: String, userId: String, myNickname: String, opponentNickname: String) {
+    fun initialize(roomCode: String, chatRoomId: Long, userId: String, myNickname: String, opponentNickname: String) {
         currentRoomCode = roomCode
+        currentChatRoomId = chatRoomId
         currentUserId = userId
 
         _uiState.update {
@@ -37,8 +38,8 @@ class ChatViewModel @Inject constructor(
             )
         }
 
-        // WebSocket 연결
-        chatRepository.connectToRoom(roomCode, userId)
+        // WebSocket 연결 (chatRoomId 사용)
+        chatRepository.connectToRoom(chatRoomId, userId)
 
         // 메시지 observe
         viewModelScope.launch {

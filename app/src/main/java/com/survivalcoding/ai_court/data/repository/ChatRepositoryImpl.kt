@@ -57,25 +57,19 @@ class ChatRepositoryImpl @Inject constructor(
     private val _messages = MutableSharedFlow<ChatMessageDto>(replay = 100)
     private val _winRate = MutableStateFlow(WinRateResponse(50, 50))
     private val _isConnected = MutableStateFlow(false)
+    private val _opponentJoined = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
 
     private var currentRoomCode: String? = null
     private var currentChatRoomId: Long? = null
     private var currentUserId: Long? = null
 
-    override fun connectToRoom(roomCode: String, userId: String) {
+    override fun connectToRoom(chatRoomId: Long, userId: String) {
         scope.launch {
             try {
-                currentRoomCode = roomCode
+                currentChatRoomId = chatRoomId
+                currentRoomCode = chatRoomId.toString()
                 currentUserId = userId.toLongOrNull()
-
-                // 지금은 roomCode가 chatRoomId(숫자)라고 가정
-                currentChatRoomId = roomCode.toLongOrNull()
-                val chatRoomId = currentChatRoomId
-                if (chatRoomId == null) {
-                    _error.value = "Invalid room code: $roomCode (must be numeric)"
-                    return@launch
-                }
 
                 _isConnected.value = false
                 _error.value = null
@@ -107,6 +101,12 @@ class ChatRepositoryImpl @Inject constructor(
                                 val text = (frame.body as? FrameBody.Text)?.text ?: return@collect
                                 val dto = json.decodeFromString<ChatMessageDto>(text)
                                 _messages.emit(dto)
+                                
+                                // 상대방(내가 아닌 사람)이 메시지를 보내면 입장한 것으로 감지
+                                // 또는 시스템 메시지(입장 알림)가 오면 입장한 것으로 감지
+                                if (dto.senderId != currentUserId || dto.senderId == null) {
+                                    _opponentJoined.value = true
+                                }
                             } catch (e: Exception) {
                                 e.printStackTrace()
                                 _error.value = "Failed to parse message: ${e.message}"
@@ -132,6 +132,7 @@ class ChatRepositoryImpl @Inject constructor(
                 stompSession = null
 
                 _isConnected.value = false
+                _opponentJoined.value = false
                 currentRoomCode = null
                 currentChatRoomId = null
                 currentUserId = null
@@ -173,6 +174,10 @@ class ChatRepositoryImpl @Inject constructor(
 
     override fun observeWinRate(): Flow<WinRate> {
         return _winRate.map { it.toDomain() }
+    }
+
+    override fun observeOpponentJoined(): Flow<Boolean> {
+        return _opponentJoined
     }
 
     override suspend fun requestVerdict(roomCode: String): Resource<Verdict> {

@@ -172,6 +172,7 @@ private fun ChatScreenContent(
 @Composable
 fun ChatScreen(
     roomCode: String,
+    chatRoomId: Long,
     myUserId: String,
     myNickname: String = "나",
     opponentNickname: String = "상대방",
@@ -181,9 +182,9 @@ fun ChatScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     // 화면 진입 시 한 번만 초기화
-    LaunchedEffect(roomCode, myUserId) {
-        if (roomCode.isNotBlank() && myUserId.isNotBlank()) {
-            viewModel.initialize(roomCode, myUserId, myNickname, opponentNickname)
+    LaunchedEffect(roomCode, chatRoomId, myUserId) {
+        if (chatRoomId > 0) {
+            viewModel.initialize(roomCode, chatRoomId, myUserId, myNickname, opponentNickname)
         }
     }
 

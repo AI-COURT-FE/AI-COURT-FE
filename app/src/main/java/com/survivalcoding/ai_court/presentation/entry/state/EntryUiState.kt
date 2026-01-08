@@ -15,6 +15,7 @@ data class EntryUiState(
 
 data class NavigateToChatEvent(
     val roomCode: String,
+    val chatRoomId: Long,
     val userId: String,
     val nickname: String,
 )
