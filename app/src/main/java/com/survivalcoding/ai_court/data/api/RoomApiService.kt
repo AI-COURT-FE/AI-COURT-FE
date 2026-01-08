@@ -1,9 +1,7 @@
 package com.survivalcoding.ai_court.data.api
 
-import com.survivalcoding.ai_court.data.model.request.CreateRoomRequest
 import com.survivalcoding.ai_court.data.model.request.FinalVerdictRequest
 import com.survivalcoding.ai_court.data.model.request.JoinChatRoomRequestDto
-import com.survivalcoding.ai_court.data.model.request.JoinRoomRequest
 import com.survivalcoding.ai_court.data.model.request.LoginRequestDto
 import com.survivalcoding.ai_court.data.model.request.SendMessageRequestDto
 import com.survivalcoding.ai_court.data.model.request.VerdictRequest
@@ -12,7 +10,6 @@ import com.survivalcoding.ai_court.data.model.response.ChatMessageDto
 import com.survivalcoding.ai_court.data.model.response.CreateChatRoomResponseDto
 import com.survivalcoding.ai_court.data.model.response.FinalVerdictResponse
 import com.survivalcoding.ai_court.data.model.response.JoinChatRoomResponseDto
-import com.survivalcoding.ai_court.data.model.response.RoomResponse
 import com.survivalcoding.ai_court.data.model.response.VerdictResponse
 import retrofit2.Response
 import retrofit2.http.Body
@@ -55,22 +52,6 @@ interface RoomApiService {
         @Path("chatRoomId") chatRoomId: Long,
         @Body body: SendMessageRequestDto
     ): BaseResponse<ChatMessageDto>
-
-    // // // // // //
-    @POST("rooms")
-    suspend fun createRoom(
-        @Body request: CreateRoomRequest
-    ): Response<RoomResponse>
-
-    @POST("rooms/join")
-    suspend fun joinRoom(
-        @Body request: JoinRoomRequest
-    ): Response<RoomResponse>
-
-    @GET("rooms/{roomCode}")
-    suspend fun getRoom(
-        @Path("roomCode") roomCode: String
-    ): Response<RoomResponse>
 
     @POST("verdict")
     suspend fun requestVerdict(
