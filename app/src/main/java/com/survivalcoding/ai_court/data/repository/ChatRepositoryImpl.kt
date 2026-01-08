@@ -26,8 +26,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
-import java.time.Instant
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Locale
 import javax.inject.Inject
 
 // WebSocket 이벤트 구조 (내부 통신용)
@@ -144,9 +144,13 @@ class ChatRepositoryImpl @Inject constructor(
     }
 
     private fun ChatMessageDto.toDomain(userId: String): ChatMessage {
-        val timestamp = try {
-            Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(createdAt)).toEpochMilli()
-        } catch (e: Exception) {
+        val timestamp = runCatching {
+            val sdf = SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss",
+                Locale.getDefault()
+            )
+            sdf.parse(createdAt)?.time ?: System.currentTimeMillis()
+        }.getOrElse {
             System.currentTimeMillis()
         }
 
