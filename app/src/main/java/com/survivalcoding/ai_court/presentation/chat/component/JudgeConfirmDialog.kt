@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.survivalcoding.ai_court.R
+import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
 @Composable
 fun JudgeConfirmDialog(
@@ -37,7 +38,7 @@ fun JudgeConfirmDialog(
     onConfirm: () -> Unit
 ) {
     Dialog(onDismissRequest = onCancel) {
-        // ✅ 팝업 컨테이너(테두리/그림자/배경/라운드)
+        // 팝업 컨테이너(테두리/그림자/배경/라운드)
         Box(
             modifier = Modifier
                 .shadow(
@@ -103,7 +104,7 @@ private fun DialogContent(
         ) {
             DialogButton(
                 text = "취소",
-                background = Color(0xFFE0E0E0),
+                background = AI_COURTTheme.colors.gray400,
                 textColor = Color.Black,
                 onClick = onCancel,
                 modifier = Modifier.weight(1f)
@@ -132,7 +133,7 @@ fun DialogButton(
         modifier = modifier
             .height(48.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(color = Color(0xFF8C8C8C))
+            .background(color = background)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
