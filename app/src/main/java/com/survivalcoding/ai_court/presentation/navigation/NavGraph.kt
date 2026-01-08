@@ -1,7 +1,5 @@
 package com.survivalcoding.ai_court.presentation.navigation
 
-import ChatScreen
-import ChatViewModel
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -14,6 +12,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.survivalcoding.ai_court.presentation.chat.screen.ChatScreen
+import com.survivalcoding.ai_court.presentation.chat.viewmodel.ChatViewModel
 import com.survivalcoding.ai_court.presentation.entry.screen.EntryScreen
 import com.survivalcoding.ai_court.presentation.entry.viewmodel.EntryViewModel
 import com.survivalcoding.ai_court.presentation.join.screen.JoinScreen
