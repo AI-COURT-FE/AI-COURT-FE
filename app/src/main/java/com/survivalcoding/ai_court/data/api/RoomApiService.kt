@@ -10,6 +10,7 @@ import com.survivalcoding.ai_court.data.model.response.BaseResponse
 import com.survivalcoding.ai_court.data.model.response.ChatMessageDto
 import com.survivalcoding.ai_court.data.model.response.ExitDecisionResponseDto
 import com.survivalcoding.ai_court.data.model.response.ExitRequestResponseDto
+import com.survivalcoding.ai_court.data.model.response.FinalJudgementResponseDto
 import com.survivalcoding.ai_court.data.model.response.FinalVerdictResponse
 import com.survivalcoding.ai_court.data.model.response.PollResponseDto
 import com.survivalcoding.ai_court.data.model.response.VerdictResponse
@@ -82,13 +83,10 @@ interface RoomApiService {
         @Body body: ExitDecisionRequestDto
     ): BaseResponse<ExitDecisionResponseDto>
 
-    @POST("verdict")
-    suspend fun requestVerdict(
-        @Body request: VerdictRequest
-    ): Response<VerdictResponse>
 
-    @POST("verdict/final")
-    suspend fun requestFinalVerdict(
-        @Body request: FinalVerdictRequest
-    ): Response<FinalVerdictResponse>
+    @GET("chat/room/{chatRoomId}/final-judgement")
+    suspend fun getFinalJudgement(
+        @Path("chatRoomId") chatRoomId: Long
+    ): BaseResponse<FinalJudgementResponseDto>
+
 }

@@ -138,6 +138,7 @@ class ChatViewModel @Inject constructor(
 
     private fun loadVerdict() {
         val roomCode = currentRoomCode ?: return
+        val chatRoomId = roomCode.replace("-", "").toLongOrNull() ?: return
 
         // 이미 로딩 중이거나 판결문이 있으면 스킵
         if (_uiState.value.isLoading || _uiState.value.verdict != null) return
@@ -145,7 +146,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            when (val result = chatRepository.requestVerdict(roomCode)) {
+            when (val result = chatRepository.getFinalJudgement(chatRoomId)) {
                 is Resource.Success -> {
                     _uiState.update {
                         it.copy(
