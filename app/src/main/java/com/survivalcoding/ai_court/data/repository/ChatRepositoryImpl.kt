@@ -48,6 +48,7 @@ class ChatRepositoryImpl @Inject constructor(
     private var currentRoomCode: String? = null
     private var currentChatRoomId: Long? = null
     private var currentUserId: Long? = null
+    private var currentUserNickname: String? = null
 
     override fun connectToRoom(roomCode: String, userId: String) {
         scope.launch {
@@ -57,11 +58,12 @@ class ChatRepositoryImpl @Inject constructor(
 
                 // roomCode가 chatRoomId(숫자)라고 가정
                 currentChatRoomId = roomCode.toLongOrNull()
-                val chatRoomId = currentChatRoomId
-                if (chatRoomId == null) {
-                    _error.value = "Invalid room code: $roomCode (must be numeric)"
+                val cleanCode = roomCode.replace("-", "").toLongOrNull()
+                if (cleanCode == null) {
+                    _error.value = "유효하지 않은 방 코드입니다."
                     return@launch
                 }
+                currentChatRoomId = cleanCode
 
                 // 상태 초기화
                 _isConnected.value = true
@@ -77,8 +79,7 @@ class ChatRepositoryImpl @Inject constructor(
                     while (isActive) {
                         try {
                             val response = roomApiService.pollChatRoom(
-                                chatRoomId = chatRoomId,
-                                lastMessageId = lastMessageId
+                                chatRoomId = cleanCode, lastMessageId = lastMessageId
                             )
 
                             if (response.success) {
@@ -94,11 +95,16 @@ class ChatRepositoryImpl @Inject constructor(
                                 }
 
                                 // 상태 업데이트
-                                _chatRoomStatus.value = ChatRoomStatus.fromString(pollData.chatRoomStatus)
+                                _chatRoomStatus.value =
+                                    ChatRoomStatus.fromString(pollData.chatRoomStatus)
                                 _finishRequestNickname.value = pollData.finishRequestNickname
+
+                                // percent는 Map<String, Int> 타입
+                                val percentMap = pollData.percent
+                                val nicknames = percentMap.keys.toList()
                                 _winRate.value = WinRate(
-                                    userAScore = pollData.percent.A,
-                                    userBScore = pollData.percent.B
+                                    userAScore = if (nicknames.isNotEmpty()) percentMap[nicknames[0]] ?: 50 else 50,
+                                    userBScore = if (nicknames.size > 1) percentMap[nicknames[1]] ?: 50 else 50
                                 )
                             } else {
                                 _error.value = "Poll failed: ${response.result}"
@@ -138,18 +144,17 @@ class ChatRepositoryImpl @Inject constructor(
 
         return try {
             val response = roomApiService.sendMessage(
-                chatRoomId = chatRoomId,
-                body = SendMessageRequestDto(content)
+                chatRoomId = chatRoomId, body = SendMessageRequestDto(content)
             )
 
             if (response.success) {
-                // 메시지 전송 성공 - 폴링에서 새 메시지를 가져올 것
+                // sendMessage API는 ChatMessageDto 하나만 반환함
+                // 새 메시지는 폴링에서 자동으로 가져옴
                 Resource.Success(Unit)
             } else {
-                Resource.Error(response.result.toString() ?: "Failed to send message")
+                Resource.Error("Failed to send message: ${response.result}")
             }
         } catch (e: Exception) {
-            e.printStackTrace()
             Resource.Error(e.message ?: "Unknown error")
         }
     }
@@ -183,24 +188,22 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun ChatMessageDto.toDomain(userId: String): ChatMessage {
-        // createdAt이 "2026-01-08T12:00:00"처럼 오프셋 없을 수 있어 LocalDateTime 파싱
+    private fun ChatMessageDto.toDomain(myUserId: String): ChatMessage {
         val timestamp = runCatching {
-            val sdf = SimpleDateFormat(
-                "yyyy-MM-dd'T'HH:mm:ss",
-                Locale.getDefault()
-            )
+            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
             sdf.parse(createdAt)?.time ?: System.currentTimeMillis()
         }.getOrElse {
             System.currentTimeMillis()
         }
 
-        val isMyMessage = senderId?.toString() == userId
+        // senderId로 비교하거나, 닉네임으로 비교
+        val isMyMessage = senderId?.toString() == myUserId ||
+                (currentUserNickname != null && senderNickname == currentUserNickname)
 
         return ChatMessage(
-            id = messageId?.toString() ?: "",
+            id = messageId.toString(),
             roomCode = currentRoomCode.orEmpty(),
-            senderId = senderId?.toString().orEmpty(),
+            senderId = senderId?.toString() ?: senderNickname,
             senderNickname = senderNickname,
             content = content,
             timestamp = timestamp,
