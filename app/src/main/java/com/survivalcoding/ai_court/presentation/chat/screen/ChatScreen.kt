@@ -44,11 +44,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.survivalcoding.ai_court.R
 import com.survivalcoding.ai_court.domain.model.ChatMessage
-import com.survivalcoding.ai_court.presentation.chat.component.JudgeConfirmDialog
 import com.survivalcoding.ai_court.presentation.chat.state.ChatUiState
 import com.survivalcoding.ai_court.presentation.chat.viewmodel.ChatViewModel
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 import java.util.UUID
+import com.survivalcoding.ai_court.presentation.chat.component.JudgeAcceptanceDialog
+
 
 @Composable
 private fun ChatScreenContent(
@@ -57,9 +58,11 @@ private fun ChatScreenContent(
     onNavigateBack: () -> Unit,
     onInputChange: (String) -> Unit,
     onSendClick: () -> Unit,
-    onCancelVerdict: () -> Unit,
-    onConfirmVerdict: () -> Unit
-) {
+    onConfirmVerdict: () -> Unit,
+    onApproveExit: () -> Unit,
+    onRejectExit: () -> Unit
+
+    ) {
     val listState = rememberLazyListState()
     LaunchedEffect(uiState.messages.size) {
         if (uiState.messages.isNotEmpty()) {
@@ -164,6 +167,13 @@ private fun ChatScreenContent(
             }
         }
 
+        if (uiState.showFinishApprovalDialog) {
+            JudgeAcceptanceDialog(
+                onCancel = onRejectExit,
+                onConfirm = onApproveExit
+            )
+        }
+
 //        if (uiState.showVerdictDialog) {
 //            JudgeConfirmDialog(
 //                onCancel = onCancelVerdict, onConfirm = onConfirmVerdict
@@ -199,102 +209,13 @@ fun ChatScreen(
         onNavigateBack = onNavigateBack,
         onInputChange = viewModel::onInputChange,
         onSendClick = viewModel::onSendClick,
-        onCancelVerdict = viewModel::closeVerdictDialog,
         onConfirmVerdict = {
             android.util.Log.d("VERDICT", "UI onConfirmVerdict clicked")
             viewModel.closeVerdictDialog()
             viewModel.requestExit()
-            viewModel.requestExit()
-        }
-    )
-}
+        },
+        onApproveExit = viewModel::approveExit,
+        onRejectExit = viewModel::rejectExit,
 
-@Preview(showBackground = true, widthDp = 360, heightDp = 760)
-@Composable
-private fun ChatScreenPreview() {
-    val fakeMessages = listOf(
-        ChatMessage(
-            id = "1",
-            roomCode = "TEST123",
-            senderId = "opponent",
-            senderNickname = "박논리",
-            content = "솔직히 네가 늦은 건 맞잖아\n사과는 해야지",
-            timestamp = System.currentTimeMillis(),
-            isMyMessage = false
-        ), ChatMessage(
-            id = "2",
-            roomCode = "TEST123",
-            senderId = "me",
-            senderNickname = "김논리",
-            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
-            timestamp = System.currentTimeMillis(),
-            isMyMessage = true
-        ), ChatMessage(
-            id = "3",
-            roomCode = "TEST123",
-            senderId = "me",
-            senderNickname = "김논리",
-            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
-            timestamp = System.currentTimeMillis(),
-            isMyMessage = true
-        ), ChatMessage(
-            id = "4",
-            roomCode = "TEST123",
-            senderId = "me",
-            senderNickname = "김논리",
-            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
-            timestamp = System.currentTimeMillis(),
-            isMyMessage = true
-        ), ChatMessage(
-            id = "5",
-            roomCode = "TEST123",
-            senderId = "me",
-            senderNickname = "김논리",
-            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
-            timestamp = System.currentTimeMillis(),
-            isMyMessage = true
-        ), ChatMessage(
-            id = "6",
-            roomCode = "TEST123",
-            senderId = "me",
-            senderNickname = "김논리",
-            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
-            timestamp = System.currentTimeMillis(),
-            isMyMessage = true
-        ), ChatMessage(
-            id = "7",
-            roomCode = "TEST123",
-            senderId = "me",
-            senderNickname = "김논리",
-            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
-            timestamp = System.currentTimeMillis(),
-            isMyMessage = true
-        ), ChatMessage(
-            id = "8",
-            roomCode = "TEST123",
-            senderId = "me",
-            senderNickname = "김논리",
-            content = "아니 차가 막힌 걸 어쩔 수 없잖아",
-            timestamp = System.currentTimeMillis(),
-            isMyMessage = true
         )
-    )
-
-    val fakeUiState = ChatUiState(
-        messages = fakeMessages,
-        inputMessage = "프리뷰 입력중…",
-        showVerdictDialog = false,
-        myNickname = "김논리",
-        opponentNickname = "박논리"
-    )
-
-    ChatScreenContent(
-        roomCode = "TEST123",
-        uiState = fakeUiState,
-        onNavigateBack = {},
-        onInputChange = {},
-        onSendClick = {},
-        onCancelVerdict = {},
-        onConfirmVerdict = {}
-    )
 }
