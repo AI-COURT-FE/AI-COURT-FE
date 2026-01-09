@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -87,7 +88,7 @@ fun WaitingBox(
                 style = AI_COURTTheme.typography.Caption_regular
             )
 
-            Spacer(modifier = Modifier.height(21.dp))
+            Spacer(modifier = Modifier.height(46.dp))
 
             Box(
                 modifier = Modifier
@@ -98,20 +99,28 @@ fun WaitingBox(
                     .border(1.dp, Color(0xFFBABABA), innerShape)
                     .padding(horizontal = 19.dp)
             ) {
-                Column(
+                val iconSize = 52.dp
+                val gap = 12.dp
 
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                        .padding(end = iconSize + gap) // 아이콘 자리 확보(버튼 뒤로 안 감)
                 ) {
                     Text(
                         text = "사건번호",
-                        style = AI_COURTTheme.typography.Caption_regular,
-                        modifier = Modifier.padding(top = 16.dp)
+                        style = AI_COURTTheme.typography.Caption_regular
                     )
+
                     AutoResizeText(
                         text = roomCode,
                         style = AI_COURTTheme.typography.Title_1,
                         maxFontSize = AI_COURTTheme.typography.Title_1.fontSize,
-                        minFontSize = 14.sp,
-                        modifier = Modifier.padding(top = 18.dp)
+                        minFontSize = 10.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 18.dp)
                     )
                 }
 
@@ -119,49 +128,11 @@ fun WaitingBox(
                     painter = painterResource(R.drawable.ic_copy),
                     contentDescription = "복사하기",
                     modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .size(52.dp)
+                        .align(Alignment.CenterEnd) // 박스 기준 버티컬 중앙
+                        .size(iconSize)
                         .clickable { onCopyRoomCode() }
                 )
             }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 22.dp)
-                    .height(54.dp)
-                    .border(1.dp, AI_COURTTheme.colors.black, innerShape)
-                    .background(AI_COURTTheme.colors.white, innerShape)
-            ) {
-                // 왼쪽 아이콘 영역(고정 폭)
-                Box(
-                    modifier = Modifier
-                        .width(21.dp + 24.dp) // start padding(21) + icon(24)
-                        .padding(start = 21.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_share),
-                        contentDescription = "공유하기",
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                // 가운데 텍스트 영역(가변 폭) - 진짜 중앙
-                Text(
-                    text = "초대링크 복사하기",
-                    style = AI_COURTTheme.typography.Body_2,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f)
-                )
-
-                // 오른쪽 더미 영역(왼쪽과 동일 폭) -> 텍스트가 Row 정중앙에 오게 함
-                Spacer(modifier = Modifier.width(21.dp + 24.dp))
-            }
-
         }
     }
 }

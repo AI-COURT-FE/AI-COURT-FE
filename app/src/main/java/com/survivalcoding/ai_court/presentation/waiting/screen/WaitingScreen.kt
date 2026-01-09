@@ -66,6 +66,7 @@ fun WaitingScreen(
         }
             )
         Spacer(modifier= Modifier.height(25.dp))
+
         InfoBanner()
 
         Spacer(modifier= Modifier.height(112.dp))
