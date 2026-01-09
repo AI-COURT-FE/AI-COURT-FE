@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.survivalcoding.ai_court.presentation.waiting.component.InfoBanner
 import com.survivalcoding.ai_court.presentation.waiting.component.WaitingBox
 import com.survivalcoding.ai_court.presentation.waiting.viewmodel.WaitingViewModel
+import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -60,7 +61,7 @@ fun WaitingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(AI_COURTTheme.colors.cream)
             .systemBarsPadding()
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally

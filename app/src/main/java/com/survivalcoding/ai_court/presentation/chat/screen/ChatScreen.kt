@@ -80,7 +80,8 @@ private fun ChatScreenContent(
             leftName = uiState.opponentNickname,
             rightName = uiState.myNickname,
             leftScore = uiState.winRate.userAScore,
-            rightScore = uiState.winRate.userBScore
+            rightScore = uiState.winRate.userBScore,
+            onRequestVerdict = onConfirmVerdict
         )
 
         Box(
@@ -163,11 +164,11 @@ private fun ChatScreenContent(
             }
         }
 
-        if (uiState.showVerdictDialog) {
-            JudgeConfirmDialog(
-                onCancel = onCancelVerdict, onConfirm = onConfirmVerdict
-            )
-        }
+//        if (uiState.showVerdictDialog) {
+//            JudgeConfirmDialog(
+//                onCancel = onCancelVerdict, onConfirm = onConfirmVerdict
+//            )
+//        }
     }
 }
 
@@ -200,8 +201,10 @@ fun ChatScreen(
         onSendClick = viewModel::onSendClick,
         onCancelVerdict = viewModel::closeVerdictDialog,
         onConfirmVerdict = {
+            android.util.Log.d("VERDICT", "UI onConfirmVerdict clicked")
             viewModel.closeVerdictDialog()
-            // 판결 요청 로직
+            viewModel.requestExit()
+            viewModel.requestExit()
         }
     )
 }

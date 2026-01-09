@@ -23,5 +23,8 @@ interface ChatRepository {
     suspend fun getFinalJudgement(chatRoomId: Long): Resource<FinalJudgementResponseDto>
 
     fun observeOpponentNickname(): Flow<String?>
+
+    suspend fun approveExit(chatRoomId: Long): Resource<Unit>
+    suspend fun rejectExit(chatRoomId: Long): Resource<Unit>
 }
 
