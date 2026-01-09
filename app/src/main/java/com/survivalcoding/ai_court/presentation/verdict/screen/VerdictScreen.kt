@@ -5,15 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -22,7 +19,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -382,7 +378,7 @@ private fun VerdictScreenPreview_Success() {
             uiState = VerdictUiState(
                 isLoading = false,
                 finalVerdict = FinalVerdict(
-                    winnerNickname = "김논리",
+                    winnerNickname = "ㅇㄴㄹㅁㄴㅇㅁㄹㄴㅇㅁㄹㄴㅇ김논리",
                     reason = "상대의 주장에 반박 근거가 명확했고, 주장 간 모순이 적었습니다.",
                     summary = listOf("이번 논쟁은 핵심 쟁점 2개 중 2개 모두에서 김논리님의 주장이 설득력이 높았습니다.", "냐냐냐냔"),
                     logicA = 78,

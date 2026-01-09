@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -45,10 +43,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.Dp.Companion.Unspecified
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import com.survivalcoding.ai_court.R
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 import kotlin.math.abs
@@ -79,9 +77,12 @@ fun JudgmentComponent(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier // modifier 적용
             .fillMaxWidth()
-            .height(cardHeight)
+            .then(
+                if (cardHeight != Unspecified) Modifier.height(cardHeight)
+                else Modifier
+            )
             .clip(cardShape)
             .background(Color.White)
     ) {
