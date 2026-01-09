@@ -48,10 +48,16 @@ class EntryViewModel @Inject constructor(
             return false
         }
 
-        // 비번 입력 X nickname을 그대로 password로 넣기
+        // ADDED: 비번 빈 값 체크(지금 UI에서 비번 입력 받는 구조니까)
+        if (state.password.isBlank()) { // ADDED
+            _uiState.update { it.copy(errorMessage = "비밀번호를 입력해주세요") } // ADDED
+            return false // ADDED
+        }
+
+        // CHANGED: password를 nickname으로 고정하지 말고 state.password 사용
         val result = authRepository.login(
             nickname = state.nickname,
-            password = state.nickname
+            password = state.password // CHANGED
         )
 
         return result.fold(
@@ -66,24 +72,24 @@ class EntryViewModel @Inject constructor(
         )
     }
 
-
     fun createRoom() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            // 1) 로그인 먼저
             if (!ensureLoginOrShowError()) {
                 _uiState.update { it.copy(isLoading = false) }
                 return@launch
             }
 
-            // 2) 로그인 성공 후 기존 로직 그대로
-            when (val result = roomRepository.createRoom(_uiState.value.nickname)) {
+            // CHANGED: password 전달
+            val nickname = _uiState.value.nickname
+            val password = _uiState.value.password // ADDED
+
+            when (val result = roomRepository.createRoom(nickname, password)) { // ✅ CHANGED
                 is Resource.Success -> {
                     val room = result.data
-
                     val inviteCode = room.roomCode
-                    val chatRoomId = room.hostUser.sessionId.toLong() // String -> Long
+                    val chatRoomId = room.hostUser.sessionId.toLong()
 
                     _uiState.update {
                         it.copy(
@@ -94,6 +100,8 @@ class EntryViewModel @Inject constructor(
                                 roomCode = inviteCode,
                                 chatRoomId = chatRoomId,
                                 nickname = it.nickname
+                                // ⚠️ NOTE: 이후 화면에서 exit 등에 password가 필요하면
+                                // NavigateToChatEvent에 password도 추가로 실어야 “완전”해짐.
                             )
                         )
                     }
@@ -112,10 +120,8 @@ class EntryViewModel @Inject constructor(
         val state = _uiState.value
         val nickname = state.nickname
 
-        // 1. 모든 공백과 하이픈을 제거하여 순수 데이터만 추출
         val cleanCode = state.roomCode.replace("-", "").replace(" ", "")
 
-        // 2. 8자리 검증 및 하이픈 재조합 (서버 포맷: XXXX-XXXX)
         if (cleanCode.length != 8) {
             _uiState.update { it.copy(errorMessage = "방 코드는 8자리여야 합니다.") }
             return
@@ -130,26 +136,28 @@ class EntryViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            // 3. 로그인 체크 (비밀번호 규칙을 닉네임과 동일하게 통일)
             if (!ensureLoginOrShowError()) {
                 _uiState.update { it.copy(isLoading = false) }
                 return@launch
             }
 
-            // 4. 정제된 formattedRoomCode 전달
-            when (val result = roomRepository.joinRoom(formattedRoomCode, nickname)) {
+            // CHANGED: password 전달
+            val password = _uiState.value.password // ADDED
+            when (val result = roomRepository.joinRoom(formattedRoomCode, nickname, password)) { // ✅ CHANGED
                 is Resource.Success -> {
                     _uiState.update { it.copy(isLoading = false) }
-                    // 여기서 navigateToChat 세팅하지 않음
+                    // 여기서 navigateToChat 세팅하지 않음 (기존 로직 유지)
                 }
 
                 is Resource.Error -> {
                     _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
                 }
+
                 is Resource.Loading -> {}
             }
         }
     }
+
     fun onNavigationHandled() {
         _uiState.update { it.copy(navigateToChat = null) }
     }
@@ -175,4 +183,3 @@ class EntryViewModel @Inject constructor(
         }
     }
 }
-

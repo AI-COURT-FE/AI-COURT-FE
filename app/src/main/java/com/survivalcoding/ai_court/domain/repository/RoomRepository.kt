@@ -8,10 +8,34 @@ import com.survivalcoding.ai_court.domain.model.User
 import kotlinx.coroutines.flow.Flow
 
 interface RoomRepository {
-    suspend fun createRoom(hostNickname: String): Resource<Room>
-    suspend fun joinRoom(roomCode: String, guestNickname: String): Resource<Room>
+    // ✅ CHANGED: password를 추가 (기존 호출부 안 깨지게 기본값 = nickname)
+    suspend fun createRoom(
+        hostNickname: String,
+        hostPassword: String = hostNickname, // ✅ ADDED
+    ): Resource<Room>
+
+    // ✅ CHANGED: password를 추가 (기존 호출부 안 깨지게 기본값 = nickname)
+    suspend fun joinRoom(
+        roomCode: String,
+        guestNickname: String,
+        guestPassword: String = guestNickname, // ✅ ADDED
+    ): Resource<Room>
+
     fun observeRoom(roomCode: String): Flow<Room>
-    suspend fun requestExit(chatRoomId: Long, user: User): ExitRequestResponseDto
-    suspend fun decideExit(chatRoomId: Long, user: User, approve: Boolean): ExitDecisionResponseDto
+
+    // ✅ CHANGED: exit에도 password 추가 (기존 호출부 안 깨지게 기본값 = user.nickname)
+    suspend fun requestExit(
+        chatRoomId: Long,
+        user: User,
+        password: String = user.nickname, // ✅ ADDED
+    ): ExitRequestResponseDto
+
+    // ✅ CHANGED: exit에도 password 추가 (기존 호출부 안 깨지게 기본값 = user.nickname)
+    suspend fun decideExit(
+        chatRoomId: Long,
+        user: User,
+        approve: Boolean,
+        password: String = user.nickname, // ✅ ADDED
+    ): ExitDecisionResponseDto
 }
 
