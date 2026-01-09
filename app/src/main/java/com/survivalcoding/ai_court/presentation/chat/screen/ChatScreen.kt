@@ -217,7 +217,8 @@ fun ChatScreen(
                     .clickable(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
-                    ) {}
+                    ) {},
+                contentAlignment = Alignment.Center
             ) {
                 UntilDoneComponent(Modifier.align(Alignment.Center))
             }
