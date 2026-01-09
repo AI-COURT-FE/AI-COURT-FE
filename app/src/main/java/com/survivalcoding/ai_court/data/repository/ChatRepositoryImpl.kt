@@ -1,6 +1,5 @@
 package com.survivalcoding.ai_court.data.repository
 
-import com.survivalcoding.ai_court.BuildConfig
 import com.survivalcoding.ai_court.core.util.Resource
 import com.survivalcoding.ai_court.data.api.RoomApiService
 import com.survivalcoding.ai_court.data.model.request.SendMessageRequestDto
@@ -8,6 +7,7 @@ import com.survivalcoding.ai_court.data.model.request.VerdictRequest
 import com.survivalcoding.ai_court.data.model.response.ChatMessageDto
 import com.survivalcoding.ai_court.data.model.response.VerdictResponse
 import com.survivalcoding.ai_court.domain.model.ChatMessage
+import com.survivalcoding.ai_court.domain.model.ChatRoomStatus
 import com.survivalcoding.ai_court.domain.model.Verdict
 import com.survivalcoding.ai_court.domain.model.WinRate
 import com.survivalcoding.ai_court.domain.repository.ChatRepository
@@ -15,47 +15,33 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.runningFold
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
-import org.hildan.krossbow.stomp.StompClient
-import org.hildan.krossbow.stomp.StompSession
-import org.hildan.krossbow.stomp.frame.FrameBody
-import org.hildan.krossbow.stomp.frame.StompFrame
-import org.hildan.krossbow.stomp.headers.StompSendHeaders
-import org.hildan.krossbow.stomp.headers.StompSubscribeHeaders
-import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import java.text.SimpleDateFormat
 import java.util.Locale
 import javax.inject.Inject
 
-@kotlinx.serialization.Serializable
-private data class WinRateResponse(
-    val userAScore: Int,
-    val userBScore: Int
-) {
-    fun toDomain() = WinRate(userAScore, userBScore)
-}
-
 class ChatRepositoryImpl @Inject constructor(
-    private val roomApiService: RoomApiService,
-    private val json: Json
+    private val roomApiService: RoomApiService
 ) : ChatRepository {
-
-    private val stompClient = StompClient(OkHttpWebSocketClient())
-    private var stompSession: StompSession? = null
-
-    // 구독은 Subscription 객체가 아니라 "collect Job"으로 관리
-    private var messageJob: Job? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val _messages = MutableSharedFlow<ChatMessageDto>(replay = 100)
-    private val _winRate = MutableStateFlow(WinRateResponse(50, 50))
+    // 폴링 Job
+    private var pollingJob: Job? = null
+
+    // 마지막 메시지 ID 추적
+    private var lastMessageId: Long? = null
+
+    // State Flows
+    private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
+    private val _winRate = MutableStateFlow(WinRate(50, 50))
+    private val _chatRoomStatus = MutableStateFlow(ChatRoomStatus.ALIVE)
+    private val _finishRequestNickname = MutableStateFlow<String?>(null)
     private val _isConnected = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
 
@@ -69,7 +55,7 @@ class ChatRepositoryImpl @Inject constructor(
                 currentRoomCode = roomCode
                 currentUserId = userId.toLongOrNull()
 
-                // 지금은 roomCode가 chatRoomId(숫자)라고 가정
+                // roomCode가 chatRoomId(숫자)라고 가정
                 currentChatRoomId = roomCode.toLongOrNull()
                 val chatRoomId = currentChatRoomId
                 if (chatRoomId == null) {
@@ -77,41 +63,54 @@ class ChatRepositoryImpl @Inject constructor(
                     return@launch
                 }
 
-                _isConnected.value = false
-                _error.value = null
-
-                // BASE_URL -> ws/wss 변환 + 문서대로 /ws
-                val httpBase = BuildConfig.BASE_URL.trimEnd('/')
-                val wsBase = httpBase
-                    .replaceFirst("https://", "wss://")
-                    .replaceFirst("http://", "ws://")
-                val wsUrl = "$wsBase/ws"
-
-                // STOMP 연결
-                stompSession = stompClient.connect(wsUrl)
+                // 상태 초기화
                 _isConnected.value = true
+                _error.value = null
+                _messages.value = emptyList()
+                lastMessageId = null
 
-                // 기존 구독 정리
-                messageJob?.cancel()
-                messageJob = null
+                // 기존 폴링 Job 취소
+                pollingJob?.cancel()
 
-                // 메시지 구독(Flow collect)
-                val headers = StompSubscribeHeaders(destination = "/topic/chatroom/$chatRoomId")
-                val session = stompSession ?: throw IllegalStateException("No STOMP session")
+                // 1초 간격 폴링 시작
+                pollingJob = scope.launch {
+                    while (isActive) {
+                        try {
+                            val response = roomApiService.pollChatRoom(
+                                chatRoomId = chatRoomId,
+                                lastMessageId = lastMessageId
+                            )
 
-                messageJob = scope.launch {
-                    session
-                        .subscribe(headers) // Flow<StompFrame.Message>
-                        .collect { frame: StompFrame.Message ->
-                            try {
-                                val text = (frame.body as? FrameBody.Text)?.text ?: return@collect
-                                val dto = json.decodeFromString<ChatMessageDto>(text)
-                                _messages.emit(dto)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                _error.value = "Failed to parse message: ${e.message}"
+                            if (response.success) {
+                                val pollData = response.result
+
+                                // 새 메시지가 있으면 추가
+                                if (pollData.messages.isNotEmpty()) {
+                                    val newMessages = pollData.messages.map { dto ->
+                                        dto.toDomain(currentUserId?.toString().orEmpty())
+                                    }
+                                    _messages.value = _messages.value + newMessages
+                                    lastMessageId = pollData.messages.last().messageId
+                                }
+
+                                // 상태 업데이트
+                                _chatRoomStatus.value = ChatRoomStatus.fromString(pollData.chatRoomStatus)
+                                _finishRequestNickname.value = pollData.finishRequestNickname
+                                _winRate.value = WinRate(
+                                    userAScore = pollData.percent.A,
+                                    userBScore = pollData.percent.B
+                                )
+                            } else {
+                                _error.value = "Poll failed: ${response.result}"
                             }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // 에러가 발생해도 폴링은 계속 진행
+                            _error.value = "Poll error: ${e.message}"
                         }
+
+                        delay(1000) // 1초 대기
+                    }
                 }
 
             } catch (e: Exception) {
@@ -123,56 +122,52 @@ class ChatRepositoryImpl @Inject constructor(
     }
 
     override fun disconnectFromRoom() {
-        scope.launch {
-            try {
-                messageJob?.cancel()
-                messageJob = null
+        pollingJob?.cancel()
+        pollingJob = null
 
-                stompSession?.disconnect()
-                stompSession = null
-
-                _isConnected.value = false
-                currentRoomCode = null
-                currentChatRoomId = null
-                currentUserId = null
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _error.value = "Disconnect error: ${e.message}"
-            }
-        }
+        _isConnected.value = false
+        currentRoomCode = null
+        currentChatRoomId = null
+        currentUserId = null
+        lastMessageId = null
     }
 
-    override fun sendMessage(content: String): Resource<Unit> {
+    override suspend fun sendMessage(content: String): Resource<Unit> {
         val chatRoomId = currentChatRoomId ?: return Resource.Error("Not connected")
-        if (!_isConnected.value) return Resource.Error("Not connected to WebSocket")
+        if (!_isConnected.value) return Resource.Error("Not connected to chat room")
 
-        val requestJson = json.encodeToString(
-            SendMessageRequestDto.serializer(),
-            SendMessageRequestDto(content)
-        )
+        return try {
+            val response = roomApiService.sendMessage(
+                chatRoomId = chatRoomId,
+                body = SendMessageRequestDto(content)
+            )
 
-        scope.launch {
-            try {
-                val session = stompSession ?: throw IllegalStateException("No STOMP session")
-                val headers = StompSendHeaders(destination = "/app/chatroom/$chatRoomId")
-                session.send(headers, FrameBody.Text(requestJson))
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _error.value = "Failed to send message: ${e.message}"
+            if (response.success) {
+                // 메시지 전송 성공 - 폴링에서 새 메시지를 가져올 것
+                Resource.Success(Unit)
+            } else {
+                Resource.Error(response.result.toString() ?: "Failed to send message")
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message ?: "Unknown error")
         }
-
-        return Resource.Success(Unit)
     }
 
     override fun observeMessages(): Flow<List<ChatMessage>> {
-        return _messages.runningFold(emptyList()) { acc, dto ->
-            acc + dto.toDomain(currentUserId?.toString().orEmpty())
-        }
+        return _messages.asStateFlow()
     }
 
     override fun observeWinRate(): Flow<WinRate> {
-        return _winRate.map { it.toDomain() }
+        return _winRate.asStateFlow()
+    }
+
+    override fun observeChatRoomStatus(): Flow<ChatRoomStatus> {
+        return _chatRoomStatus.asStateFlow()
+    }
+
+    override fun observeFinishRequestNickname(): Flow<String?> {
+        return _finishRequestNickname.asStateFlow()
     }
 
     override suspend fun requestVerdict(roomCode: String): Resource<Verdict> {
@@ -199,7 +194,6 @@ class ChatRepositoryImpl @Inject constructor(
         }.getOrElse {
             System.currentTimeMillis()
         }
-
 
         val isMyMessage = senderId?.toString() == userId
 

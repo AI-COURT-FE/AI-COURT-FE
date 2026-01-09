@@ -2,7 +2,8 @@ package com.survivalcoding.ai_court.presentation.chat.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.survivalcoding.ai_court.domain.model.ChatMessage
+import com.survivalcoding.ai_court.core.util.Resource
+import com.survivalcoding.ai_court.domain.model.ChatRoomStatus
 import com.survivalcoding.ai_court.domain.repository.ChatRepository
 import com.survivalcoding.ai_court.presentation.chat.state.ChatUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,8 +38,9 @@ class ChatViewModel @Inject constructor(
             )
         }
 
-        // WebSocket 연결
+        // 폴링 시작 (connectToRoom)
         chatRepository.connectToRoom(roomCode, userId)
+        _uiState.update { it.copy(isConnected = true) }
 
         // 메시지 observe
         viewModelScope.launch {
@@ -63,6 +65,44 @@ class ChatViewModel @Inject constructor(
                     _uiState.update { it.copy(winRate = winRate) }
                 }
         }
+
+        // ChatRoomStatus observe
+        viewModelScope.launch {
+            chatRepository.observeChatRoomStatus()
+                .catch { e ->
+                    e.printStackTrace()
+                    _uiState.update { it.copy(errorMessage = "Failed to receive chat room status: ${e.message}") }
+                }
+                .collect { status ->
+                    _uiState.update { it.copy(chatRoomStatus = status) }
+
+                    // DONE 상태일 때 판결문 자동 요청
+                    if (status == ChatRoomStatus.DONE) {
+                        loadVerdict()
+                    }
+                }
+        }
+
+        // FinishRequestNickname observe - 종료 승인 모달 표시 로직
+        viewModelScope.launch {
+            chatRepository.observeFinishRequestNickname()
+                .catch { e ->
+                    e.printStackTrace()
+                }
+                .collect { finishRequestNickname ->
+                    _uiState.update { currentState ->
+                        // finishRequestNickname이 있고, 내 닉네임이 아닌 경우에만 승인 모달 표시
+                        val shouldShowApprovalDialog = finishRequestNickname != null &&
+                                finishRequestNickname != currentState.myNickname &&
+                                currentState.chatRoomStatus == ChatRoomStatus.REQUEST_FINISH
+
+                        currentState.copy(
+                            finishRequestNickname = finishRequestNickname,
+                            showFinishApprovalDialog = shouldShowApprovalDialog
+                        )
+                    }
+                }
+        }
     }
 
     fun onInputChange(text: String) {
@@ -77,14 +117,56 @@ class ChatViewModel @Inject constructor(
         val roomCode = currentRoomCode ?: return
         val userId = currentUserId ?: return
 
-        // Repository를 통해 메시지 전송
-        val result = chatRepository.sendMessage(text)
-        
-        if (result is com.survivalcoding.ai_court.core.util.Resource.Success) {
-            // 전송 성공 시 입력 필드만 초기화 (서버에서 응답이 오면 메시지가 추가됨)
-            _uiState.update { it.copy(inputMessage = "") }
-        } else if (result is com.survivalcoding.ai_court.core.util.Resource.Error) {
-            _uiState.update { it.copy(errorMessage = result.message) }
+        // ALIVE 상태에서만 메시지 전송 가능
+        if (s.chatRoomStatus != ChatRoomStatus.ALIVE) {
+            _uiState.update { it.copy(errorMessage = "채팅이 종료되었거나 종료 요청 중입니다.") }
+            return
+        }
+
+        // Repository를 통해 메시지 전송 (suspend 함수)
+        viewModelScope.launch {
+            val result = chatRepository.sendMessage(text)
+
+            if (result is Resource.Success) {
+                // 전송 성공 시 입력 필드만 초기화 (폴링에서 메시지가 추가됨)
+                _uiState.update { it.copy(inputMessage = "") }
+            } else if (result is Resource.Error) {
+                _uiState.update { it.copy(errorMessage = result.message) }
+            }
+        }
+    }
+
+    private fun loadVerdict() {
+        val roomCode = currentRoomCode ?: return
+
+        // 이미 로딩 중이거나 판결문이 있으면 스킵
+        if (_uiState.value.isLoading || _uiState.value.verdict != null) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
+            when (val result = chatRepository.requestVerdict(roomCode)) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            verdict = result.data,
+                            showVerdictDialog = true
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.message
+                        )
+                    }
+                }
+                else -> {
+                    _uiState.update { it.copy(isLoading = false) }
+                }
+            }
         }
     }
 
@@ -102,6 +184,10 @@ class ChatViewModel @Inject constructor(
 
     fun closeVerdictDialog() {
         _uiState.update { it.copy(showVerdictDialog = false) }
+    }
+
+    fun closeFinishApprovalDialog() {
+        _uiState.update { it.copy(showFinishApprovalDialog = false) }
     }
 
     fun clearError() {

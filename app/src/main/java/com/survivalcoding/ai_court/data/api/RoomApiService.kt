@@ -11,6 +11,7 @@ import com.survivalcoding.ai_court.data.model.response.ChatMessageDto
 import com.survivalcoding.ai_court.data.model.response.ExitDecisionResponseDto
 import com.survivalcoding.ai_court.data.model.response.ExitRequestResponseDto
 import com.survivalcoding.ai_court.data.model.response.FinalVerdictResponse
+import com.survivalcoding.ai_court.data.model.response.PollResponseDto
 import com.survivalcoding.ai_court.data.model.response.VerdictResponse
 import kotlinx.serialization.json.JsonElement
 import retrofit2.Response
@@ -18,9 +19,18 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 import retrofit2.http.QueryMap
 
 interface RoomApiService {
+    // 상태 폴링 (메시지, 채팅방 상태, 승률) TODO: 이거 아직 확정은 아님
+
+    @GET("chat/poll")
+    suspend fun pollChatRoom(
+        @Query("chatRoomId") chatRoomId: Long,
+        @Query("lastMessageId") lastMessageId: Long? = null
+    ): BaseResponse<com.survivalcoding.ai_court.data.model.response.PollResponseDto>
+
     // 로그인: 세션 생성
     @POST("login")
     suspend fun login(
