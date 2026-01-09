@@ -257,4 +257,31 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
+
+    fun approveExit() {
+        val roomCode = currentRoomCode ?: return
+        val chatRoomId = roomCode.replace("-", "").toLongOrNull() ?: return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(showFinishApprovalDialog = false) }
+            val result = chatRepository.approveExit(chatRoomId)
+            if (result is Resource.Error) {
+                _uiState.update { it.copy(errorMessage = result.message) }
+            }
+        }
+    }
+
+    fun rejectExit() {
+        val roomCode = currentRoomCode ?: return
+        val chatRoomId = roomCode.replace("-", "").toLongOrNull() ?: return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(showFinishApprovalDialog = false) }
+            val result = chatRepository.rejectExit(chatRoomId)
+            if (result is Resource.Error) {
+                _uiState.update { it.copy(errorMessage = result.message) }
+            }
+        }
+    }
+
 }

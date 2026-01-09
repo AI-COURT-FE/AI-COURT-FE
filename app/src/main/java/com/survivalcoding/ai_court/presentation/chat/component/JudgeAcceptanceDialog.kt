@@ -32,7 +32,7 @@ import com.survivalcoding.ai_court.R
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
 @Composable
-fun JudgeAcceptable(
+fun JudgeAcceptanceDialog(
     onCancel: () -> Unit,
     onConfirm: () -> Unit
 ) {
