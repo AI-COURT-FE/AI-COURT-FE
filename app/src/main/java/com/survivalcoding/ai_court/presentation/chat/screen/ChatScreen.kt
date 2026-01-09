@@ -7,6 +7,7 @@ import WinRateHeader
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,24 +33,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.survivalcoding.ai_court.R
-import com.survivalcoding.ai_court.domain.model.ChatMessage
+import com.survivalcoding.ai_court.domain.model.ChatRoomStatus
+import com.survivalcoding.ai_court.presentation.chat.component.JudgeAcceptanceDialog
+import com.survivalcoding.ai_court.presentation.chat.component.UntilDoneComponent
 import com.survivalcoding.ai_court.presentation.chat.state.ChatUiState
 import com.survivalcoding.ai_court.presentation.chat.viewmodel.ChatViewModel
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 import java.util.UUID
-import com.survivalcoding.ai_court.presentation.chat.component.JudgeAcceptanceDialog
-
 
 @Composable
 private fun ChatScreenContent(
@@ -58,12 +60,10 @@ private fun ChatScreenContent(
     onNavigateBack: () -> Unit,
     onInputChange: (String) -> Unit,
     onSendClick: () -> Unit,
-    onConfirmVerdict: () -> Unit,
-    onApproveExit: () -> Unit,
-    onRejectExit: () -> Unit
-
-    ) {
+    onRequestVerdict: () -> Unit,
+) {
     val listState = rememberLazyListState()
+
     LaunchedEffect(uiState.messages.size) {
         if (uiState.messages.isNotEmpty()) {
             listState.animateScrollToItem(uiState.messages.size - 1)
@@ -73,18 +73,17 @@ private fun ChatScreenContent(
     Column(
         Modifier
             .fillMaxSize()
-            .statusBarsPadding() // 위만
+            .statusBarsPadding()
             .background(color = AI_COURTTheme.colors.cream)
     ) {
-        ChatTopBar(
-            roomCode = roomCode, onNavigateBack = onNavigateBack
-        )
+        ChatTopBar(roomCode = roomCode, onNavigateBack = onNavigateBack)
+
         WinRateHeader(
             leftName = uiState.opponentNickname,
             rightName = uiState.myNickname,
             leftScore = uiState.winRate.userAScore,
             rightScore = uiState.winRate.userBScore,
-            onRequestVerdict = onConfirmVerdict
+            onRequestVerdict = onRequestVerdict
         )
 
         Box(
@@ -92,12 +91,11 @@ private fun ChatScreenContent(
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            // 메시지 리스트 (배너 높이만큼 위 contentPadding 확보)
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 state = listState,
                 contentPadding = PaddingValues(
-                    top = 12.dp + 6.dp + 26.dp,   // (리스트 상단 여백) + (배너 top padding) + (배너 높이)
+                    top = 12.dp + 6.dp + 26.dp,
                     bottom = 12.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -110,7 +108,6 @@ private fun ChatScreenContent(
                 }
             }
 
-            // 배너: 스크롤 영역 위에 고정 (탑바처럼)
             Row(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -136,9 +133,9 @@ private fun ChatScreenContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(bottomInsets)   // 키보드/네비바 모두 피함 (겹침 해결)
+                .windowInsetsPadding(bottomInsets)
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 20.dp)             // 키보드 위로도 20dp 여유
+                .padding(bottom = 20.dp)
         ) {
             ChatInput(
                 value = uiState.inputMessage,
@@ -148,15 +145,14 @@ private fun ChatScreenContent(
                     .padding(end = 17.dp)
                     .weight(1f)
             )
+
             Box(
                 modifier = Modifier
                     .padding(1.dp)
                     .size(52.dp)
                     .clip(CircleShape)
                     .background(Color(0xFF292D47))
-                    .clickable(
-                        enabled = uiState.inputMessage.isNotBlank()  // 입력 없으면 비활성 추천(변수명은 네 코드에 맞게)
-                    ) { onSendClick() },
+                    .clickable(enabled = uiState.inputMessage.isNotBlank()) { onSendClick() },
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -166,19 +162,6 @@ private fun ChatScreenContent(
                 )
             }
         }
-
-        if (uiState.showFinishApprovalDialog) {
-            JudgeAcceptanceDialog(
-                onCancel = onRejectExit,
-                onConfirm = onApproveExit
-            )
-        }
-
-//        if (uiState.showVerdictDialog) {
-//            JudgeConfirmDialog(
-//                onCancel = onCancelVerdict, onConfirm = onConfirmVerdict
-//            )
-//        }
     }
 }
 
@@ -189,33 +172,66 @@ fun ChatScreen(
     myNickname: String = "나",
     opponentNickname: String = "상대방",
     viewModel: ChatViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToVerdict: (Long) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val fallbackUserId = rememberSaveable { UUID.randomUUID().toString() }
     val userIdToUse = if (myUserId.isBlank()) fallbackUserId else myUserId
 
-    // 화면 진입 시 한 번만 초기화
-    LaunchedEffect(roomCode, userIdToUse) {
+    // ✅ 화면 진입 시 한 번만 폴링 연결
+    LaunchedEffect(roomCode, userIdToUse, myNickname, opponentNickname) {
         if (roomCode.isNotBlank()) {
             viewModel.initialize(roomCode, userIdToUse, myNickname, opponentNickname)
         }
     }
 
-    ChatScreenContent(
-        roomCode = roomCode,
-        uiState = uiState,
-        onNavigateBack = onNavigateBack,
-        onInputChange = viewModel::onInputChange,
-        onSendClick = viewModel::onSendClick,
-        onConfirmVerdict = {
-            android.util.Log.d("VERDICT", "UI onConfirmVerdict clicked")
-            viewModel.closeVerdictDialog()
-            viewModel.requestExit()
-        },
-        onApproveExit = viewModel::approveExit,
-        onRejectExit = viewModel::rejectExit,
+    // ✅ DONE -> VerdictScreen (1회만)
+    val hasNavigated = rememberSaveable(roomCode) { mutableStateOf(false) }
+    LaunchedEffect(uiState.chatRoomStatus) {
+        if (uiState.chatRoomStatus == ChatRoomStatus.DONE && !hasNavigated.value) {
+            hasNavigated.value = true
+            onNavigateToVerdict(roomCode.toChatRoomIdOrZero())
+        }
+    }
 
+    Box(Modifier.fillMaxSize()) {
+        ChatScreenContent(
+            roomCode = roomCode,
+            uiState = uiState,
+            onNavigateBack = onNavigateBack,
+            onInputChange = viewModel::onInputChange,
+            onSendClick = viewModel::onSendClick,
+            onRequestVerdict = {
+                // "판결 요청" = 종료 요청 보내기
+                viewModel.requestExit()
+            }
         )
+
+        // ✅ REQUEST_ACCEPT -> UntilDoneComponent (터치 차단 오버레이)
+        if (uiState.chatRoomStatus == ChatRoomStatus.REQUEST_ACCEPT) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {}
+            ) {
+                UntilDoneComponent(Modifier.align(Alignment.Center))
+            }
+        }
+
+        // ✅ REQUEST_FINISH + 상대방이 요청자면 승인/거절 다이얼로그
+        if (uiState.showFinishApprovalDialog) {
+            JudgeAcceptanceDialog(
+                onCancel = { viewModel.rejectExit() },
+                onConfirm = { viewModel.approveExit() }
+            )
+        }
+    }
 }
+
+private fun String.toChatRoomIdOrZero(): Long =
+    this.replace("-", "").toLongOrNull() ?: 0L
