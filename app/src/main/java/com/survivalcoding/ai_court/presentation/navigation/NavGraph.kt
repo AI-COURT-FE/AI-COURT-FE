@@ -32,13 +32,33 @@ fun CourtNavGraph(
     ) {
         composable(route = Route.Entry.route) {
             EntryScreen(
-                onNavigateToWaiting = { roomCode, userId, nickname ->
-                    navController.navigate(Route.Waiting.createRoute(roomCode)) {
+                onNavigateToWaiting = { inviteCode, chatRoomId ->
+                    navController.navigate(Route.Waiting.createRoute(inviteCode, chatRoomId)) {
                         popUpTo(Route.Entry.route) { inclusive = true }
                     }
                 },
-                onNavigateToJoin = {
-                    navController.navigate(Route.Join.route)
+                onNavigateToJoin = { navController.navigate(Route.Join.route) }
+            )
+        }
+
+        composable(
+            route = Route.Waiting.route,
+            arguments = listOf(
+                navArgument("inviteCode") { type = NavType.StringType },
+                navArgument("chatRoomId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val inviteCode = backStackEntry.arguments?.getString("inviteCode").orEmpty()
+            val chatRoomId = backStackEntry.arguments?.getLong("chatRoomId") ?: -1L
+
+            WaitingScreen(
+                inviteCode = inviteCode,
+                chatRoomId = chatRoomId,
+                onNavigateToChat = { id, code ->
+                    // ChatScreen의 roomCode에는 chatRoomId를 string으로 넘김 (통일)
+                    navController.navigate(Route.Chat.createRoute(id.toString())) {
+                        popUpTo(Route.Waiting.route) { inclusive = true }
+                    }
                 }
             )
         }
@@ -87,23 +107,6 @@ fun CourtNavGraph(
                         launchSingleTop = true
                     }
                 }
-            )
-        }
-
-        composable(
-            route = Route.Waiting.route,
-            arguments = listOf(navArgument("roomCode") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val roomCode = backStackEntry.arguments?.getString("roomCode").orEmpty()
-
-            WaitingScreen(
-                roomCode = roomCode,
-                onNavigateToChat = {
-                    navController.navigate(Route.Chat.createRoute(roomCode)) {
-                        popUpTo(Route.Waiting.route) { inclusive = true }
-                    }
-                },
-                onNavigateBack = { navController.popBackStack() }
             )
         }
 
