@@ -24,6 +24,15 @@ class RoomRepositoryImpl @Inject constructor(
     private val json: Json
 ) : RoomRepository {
 
+    private fun normalizeInviteCode(code: String): String {
+        val digits = code.filter { it.isDigit() }
+        return if (digits.length == 8) {
+            digits.substring(0, 4) + "-" + digits.substring(4, 8)
+        } else {
+            code.trim()
+        }
+    }
+
     // 로컬 캐시 (getRoom API가 없으므로 생성/입장 시 저장)
     private val _currentRoom = MutableStateFlow<Room?>(null)
 
@@ -73,7 +82,9 @@ class RoomRepositoryImpl @Inject constructor(
         if (login is Resource.Error) return login
 
         return try {
-            val request = JoinChatRoomRequestDto(inviteCode = roomCode)
+            val inviteCode = normalizeInviteCode(roomCode)
+
+            val request = JoinChatRoomRequestDto(inviteCode = inviteCode)
             val response = roomApiService.joinChatRoom(request)
 
             if (response.success) {
