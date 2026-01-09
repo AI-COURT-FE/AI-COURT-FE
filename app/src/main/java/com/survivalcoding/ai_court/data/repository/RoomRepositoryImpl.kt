@@ -93,7 +93,7 @@ class RoomRepositoryImpl @Inject constructor(
                 _currentRoom.value = room
                 Resource.Success(room)
             } else {
-                // ✅ “User not logged in”, “이미 입장한 채팅방”, “잘못된 코드” 전부 여기로 안전하게 옴
+                // “User not logged in”, “이미 입장한 채팅방”, “잘못된 코드” 전부 여기로 안전하게 옴
                 val msg = response.result.jsonPrimitive.content
                 Resource.Error(msg, response.code)
             }
