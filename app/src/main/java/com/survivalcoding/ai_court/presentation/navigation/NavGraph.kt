@@ -125,8 +125,13 @@ fun CourtNavGraph(
             VerdictScreen(
                 chatRoomId = chatRoomId,
                 onNavigateBack = { navController.popBackStack() },
-                onShareVerdict = { /* TODO */ },
-                onGoEntry = { /* TODO */ }
+                onGoEntry = {
+                    navController.navigate(Route.Entry.route) {
+                        popUpTo(0)        // 🔥 스택 전부 제거
+                        launchSingleTop = true
+                    }
+                },
+                onShareVerdict = { /* TODO */ }
             )
         }
     }
