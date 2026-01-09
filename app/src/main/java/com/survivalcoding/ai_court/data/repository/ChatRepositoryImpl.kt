@@ -48,11 +48,12 @@ class ChatRepositoryImpl @Inject constructor(
     private var currentUserId: Long? = null
     private var currentUserNickname: String? = null
 
-    override fun connectToRoom(roomCode: String, userId: String) {
+    override fun connectToRoom(roomCode: String, userId: String, myNickname: String) {
         scope.launch {
             try {
                 currentRoomCode = roomCode
                 currentUserId = userId.toLongOrNull()
+                currentUserNickname = myNickname
 
                 // roomCode가 chatRoomId(숫자)라고 가정
                 currentChatRoomId = roomCode.toLongOrNull()
@@ -85,11 +86,22 @@ class ChatRepositoryImpl @Inject constructor(
 
                                 // 새 메시지가 있으면 추가
                                 if (pollData.messages.isNotEmpty()) {
-                                    val newMessages = pollData.messages.map { dto ->
-                                        dto.toDomain(currentUserId?.toString().orEmpty())
+                                    val base = lastMessageId ?: 0L
+
+                                    val filtered = pollData.messages
+                                        .filter { (it.messageId ?: 0L) > base }    // null이면 0으로
+                                        .sortedBy { it.messageId ?: 0L }           // null이면 0으로 정렬
+
+                                    if (filtered.isNotEmpty()) {
+                                        val newMessages = filtered.map { dto ->
+                                            dto.toDomain(myNickname = currentUserNickname.orEmpty())
+                                        }
+                                        _messages.value = _messages.value + newMessages
+
+                                        // maxOf 대신 maxOrNull로 명확하게
+                                        val newLast = filtered.mapNotNull { it.messageId }.maxOrNull()
+                                        if (newLast != null) lastMessageId = newLast
                                     }
-                                    _messages.value = _messages.value + newMessages
-                                    lastMessageId = pollData.messages.last().messageId
                                 }
 
                                 // 상태 업데이트
@@ -99,11 +111,27 @@ class ChatRepositoryImpl @Inject constructor(
 
                                 // percent는 Map<String, Int> 타입
                                 val percentMap = pollData.percent
-                                val nicknames = percentMap.keys.toList()
-                                _winRate.value = WinRate(
-                                    userAScore = if (nicknames.isNotEmpty()) percentMap[nicknames[0]] ?: 50 else 50,
-                                    userBScore = if (nicknames.size > 1) percentMap[nicknames[1]] ?: 50 else 50
-                                )
+                                if (percentMap.isNotEmpty()) {
+                                    val me = currentUserNickname
+                                    val myScore = if (me != null) percentMap[me] else null
+
+                                    if (myScore != null) {
+                                        val opponentKey = percentMap.keys.firstOrNull { it != me }
+                                        val opponentScore = opponentKey?.let { percentMap[it] } ?: (100 - myScore)
+
+                                        // userB = 나, userA = 상대 (너 WinRateHeader가 이렇게 쓰는지에 맞춰)
+                                        _winRate.value = WinRate(
+                                            userAScore = opponentScore,
+                                            userBScore = myScore
+                                        )
+                                    } else {
+                                        // 아직 상대가 없거나, 내 닉네임이 percent에 안 잡힐 때
+                                        val first = percentMap.values.firstOrNull() ?: 50
+                                        val second = percentMap.values.drop(1).firstOrNull() ?: (100 - first)
+                                        _winRate.value = WinRate(first, second)
+                                    }
+                                }
+
                             } else {
                                 _error.value = "Poll failed: ${response.message ?: "code=${response.code}"}"
                             }
@@ -201,22 +229,18 @@ class ChatRepositoryImpl @Inject constructor(
             Resource.Error(e.message ?: "판결문 조회 중 오류 발생")
         }
     }
-    private fun ChatMessageDto.toDomain(myUserId: String): ChatMessage {
+    private fun ChatMessageDto.toDomain(myNickname: String): ChatMessage {
         val timestamp = runCatching {
             val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
             sdf.parse(createdAt)?.time ?: System.currentTimeMillis()
-        }.getOrElse {
-            System.currentTimeMillis()
-        }
+        }.getOrElse { System.currentTimeMillis() }
 
-        // senderId로 비교하거나, 닉네임으로 비교
-        val isMyMessage = senderId?.toString() == myUserId ||
-                (currentUserNickname != null && senderNickname == currentUserNickname)
+        val isMyMessage = (senderNickname == myNickname)
 
         return ChatMessage(
             id = messageId.toString(),
             roomCode = currentRoomCode.orEmpty(),
-            senderId = senderId?.toString() ?: senderNickname,
+            senderId = senderNickname,          // senderId 대신 닉네임 넣기
             senderNickname = senderNickname,
             content = content,
             timestamp = timestamp,
