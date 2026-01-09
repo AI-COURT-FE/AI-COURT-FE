@@ -2,50 +2,64 @@ package com.survivalcoding.ai_court.data.repository
 
 import com.survivalcoding.ai_court.core.util.Resource
 import com.survivalcoding.ai_court.data.api.RoomApiService
-import com.survivalcoding.ai_court.data.model.response.FinalJudgementResponseDto
 import com.survivalcoding.ai_court.domain.model.FinalVerdict
 import com.survivalcoding.ai_court.domain.repository.FinalVerdictRepository
 import javax.inject.Inject
 
 class FinalVerdictRepositoryImpl @Inject constructor(
-    private val roomApiService: RoomApiService
+    private val api: RoomApiService
 ) : FinalVerdictRepository {
-    override suspend fun requestFinalVerdict(roomCode: String): Resource<FinalVerdict> {
+
+    override suspend fun getFinalJudgement(chatRoomId: Long): Resource<FinalVerdict> {
         return try {
-            // 1. 방 코드에서 숫자 ID만 추출
-            val chatRoomId = roomCode.replace("-", "").toLongOrNull()
-                ?: return Resource.Error("유효하지 않은 방 코드입니다.")
+            val res = api.getFinalJudgement(chatRoomId)
 
-            // 2. API 호출
-            val response = roomApiService.getFinalJudgement(chatRoomId)
-
-            // 3. BaseResponse 결과 처리 (isSuccessful 대신 success 필드 사용)
-            if (response.success) {
-                // response.result는 FinalJudgementResponseDto 타입입니다.
-                Resource.Success(response.result.toDomain())
-            } else {
-                // message와 code는 함수()가 아닌 프로퍼티로 접근
-                Resource.Error(response.result.toString(), response.code)
+            if (!res.success) {
+                val msg = res.message ?: when (res.code) {
+                    401 -> "로그인이 필요해요."
+                    403 -> "채팅방 멤버만 판결문을 볼 수 있어요."
+                    404 -> "아직 판결문이 생성되지 않았어요."
+                    else -> "판결문 조회 실패 (code=${res.code})"
+                }
+                return Resource.Error(msg)
             }
+
+            // BaseResponse.result는 non-null
+            val dto = res.result
+
+            val plaintiff = dto.plaintiff
+            val defendant = dto.defendant
+            val winner = dto.winner
+            val loser = if (winner == plaintiff) defendant else plaintiff
+
+            // 서버는 winner 점수만 줌 → loser는 임시로 100 - winner (추후 BE가 둘 다 주면 여기만 수정)
+            val winnerLogic = dto.winnerLogicScore.coerceIn(0, 100)
+            val winnerEmpathy = dto.winnerEmpathyScore.coerceIn(0, 100)
+            val loserLogic = (100 - winnerLogic).coerceIn(0, 100)
+            val loserEmpathy = (100 - winnerEmpathy).coerceIn(0, 100)
+
+            val (plaintiffLogic, defendantLogic) =
+                if (winner == plaintiff) winnerLogic to loserLogic else loserLogic to winnerLogic
+            val (plaintiffEmpathy, defendantEmpathy) =
+                if (winner == plaintiff) winnerEmpathy to loserEmpathy else loserEmpathy to winnerEmpathy
+
+            Resource.Success(
+                FinalVerdict(
+                    winnerNickname = winner,
+                    loserNickname = loser,
+                    plaintiffNickname = plaintiff,
+                    defendantNickname = defendant,
+                    plaintiffLogicScore = plaintiffLogic,
+                    defendantLogicScore = defendantLogic,
+                    plaintiffEmpathyScore = plaintiffEmpathy,
+                    defendantEmpathyScore = defendantEmpathy,
+                    judgmentComment = dto.judgmentComment,
+                    winnerReason = dto.winnerReason,
+                    loserReason = dto.loserReason
+                )
+            )
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "판결문을 불러오는 중 오류가 발생했습니다.")
+            Resource.Error(e.message ?: "네트워크 오류")
         }
     }
-}
-
-// 4. 새로운 FinalVerdict 구조에 맞춘 매퍼 함수
-private fun FinalJudgementResponseDto.toDomain(): FinalVerdict {
-    return FinalVerdict(
-        winnerNickname = this.winner,
-        loserNickname = if (this.winner == this.plaintiff) this.defendant else this.plaintiff,
-        // API 응답의 논리/공감 점수를 도메인의 logicA, empathyA 등에 적절히 배분
-        // 여기서는 승자의 점수를 기준으로 예시를 짰습니다.
-        logicA = this.winnerLogicScore,
-        logicB = 100 - this.winnerLogicScore, // 예시: 나머지를 상대 점수로 할당
-        empathyA = this.winnerEmpathyScore,
-        empathyB = 100 - this.winnerEmpathyScore,
-        reason = this.winnerReason,
-        // summary가 List<String>이므로 개행 문자로 나누거나 리스트로 변환
-        summary = listOf(this.judgmentComment)
-    )
 }

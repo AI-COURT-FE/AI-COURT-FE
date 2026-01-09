@@ -4,11 +4,16 @@ data class FinalVerdict(
     val winnerNickname: String,
     val loserNickname: String = "",
 
-    val logicA: Int,
-    val logicB: Int,
-    val empathyA: Int,
-    val empathyB: Int,
+    // 추가: 역할 식별용
+    val plaintiffNickname: String = "",
+    val defendantNickname: String = "",
 
-    val reason: String,
-    val summary: List<String>
+    val plaintiffLogicScore: Int,
+    val defendantLogicScore: Int,
+    val plaintiffEmpathyScore: Int,
+    val defendantEmpathyScore: Int,
+
+    val judgmentComment: String,
+    val winnerReason: String,
+    val loserReason: String
 )
