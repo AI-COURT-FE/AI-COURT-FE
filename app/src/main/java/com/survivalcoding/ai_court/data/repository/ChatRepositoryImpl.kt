@@ -3,12 +3,10 @@ package com.survivalcoding.ai_court.data.repository
 import com.survivalcoding.ai_court.core.util.Resource
 import com.survivalcoding.ai_court.data.api.RoomApiService
 import com.survivalcoding.ai_court.data.model.request.SendMessageRequestDto
-import com.survivalcoding.ai_court.data.model.request.VerdictRequest
 import com.survivalcoding.ai_court.data.model.response.ChatMessageDto
-import com.survivalcoding.ai_court.data.model.response.VerdictResponse
+import com.survivalcoding.ai_court.data.model.response.FinalJudgementResponseDto
 import com.survivalcoding.ai_court.domain.model.ChatMessage
 import com.survivalcoding.ai_court.domain.model.ChatRoomStatus
-import com.survivalcoding.ai_court.domain.model.Verdict
 import com.survivalcoding.ai_court.domain.model.WinRate
 import com.survivalcoding.ai_court.domain.repository.ChatRepository
 import kotlinx.coroutines.CoroutineScope
@@ -107,7 +105,7 @@ class ChatRepositoryImpl @Inject constructor(
                                     userBScore = if (nicknames.size > 1) percentMap[nicknames[1]] ?: 50 else 50
                                 )
                             } else {
-                                _error.value = "Poll failed: ${response.result}"
+                                _error.value = "Poll failed: ${response.message ?: "code=${response.code}"}"
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -152,7 +150,7 @@ class ChatRepositoryImpl @Inject constructor(
                 // 새 메시지는 폴링에서 자동으로 가져옴
                 Resource.Success(Unit)
             } else {
-                Resource.Error("Failed to send message: ${response.result}")
+                Resource.Error("Failed to send message: ${response.message ?: "code=${response.code}"}")
             }
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Unknown error")
@@ -175,19 +173,34 @@ class ChatRepositoryImpl @Inject constructor(
         return _finishRequestNickname.asStateFlow()
     }
 
-    override suspend fun requestVerdict(roomCode: String): Resource<Verdict> {
+    override suspend fun requestExit(chatRoomId: Long): Resource<Unit> {
         return try {
-            val response = roomApiService.requestVerdict(VerdictRequest(roomCode))
-            if (response.isSuccessful && response.body() != null) {
-                Resource.Success(response.body()!!.toDomain())
+            val response = roomApiService.requestExit(
+                chatRoomId = chatRoomId,
+                user = emptyMap() // 세션 기반 인증이라면 빈 맵
+            )
+            if (response.success) {
+                Resource.Success(Unit)
             } else {
-                Resource.Error(response.message(), response.code())
+                Resource.Error(response.message ?: "Failed to request exit")
             }
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Unknown error")
         }
     }
 
+    override suspend fun getFinalJudgement(chatRoomId: Long): Resource<FinalJudgementResponseDto> {
+        return try {
+            val response = roomApiService.getFinalJudgement(chatRoomId)
+            if (response.success) {
+                Resource.Success(response.result)
+            } else {
+                Resource.Error(response.message ?: "판결문 조회 실패")
+            }
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "판결문 조회 중 오류 발생")
+        }
+    }
     private fun ChatMessageDto.toDomain(myUserId: String): ChatMessage {
         val timestamp = runCatching {
             val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
@@ -211,12 +224,4 @@ class ChatRepositoryImpl @Inject constructor(
         )
     }
 
-    private fun VerdictResponse.toDomain() = Verdict(
-        winner = winner,
-        winnerNickname = winnerNickname,
-        scoreA = scoreA,
-        scoreB = scoreB,
-        reason = reason,
-        summary = summary
-    )
 }

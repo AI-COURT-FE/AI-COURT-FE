@@ -16,5 +16,5 @@ data class ChatMessageDto(
 
     val createdAt: String,
 
-    val type: String
+    val type: String? = null  // API 스펙에 없으므로 optional
 )
