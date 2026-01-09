@@ -1,6 +1,5 @@
 package com.survivalcoding.ai_court.presentation.entry.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.InputTransformation.Companion.keyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -30,11 +28,11 @@ import com.survivalcoding.ai_court.R
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
 @Composable
-fun NicknameInput(
+fun PasswordInput(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "닉네임",
+    placeholder: String = "비밀번호",
     height: Dp = 54.dp
 ) {
     OutlinedTextField(
@@ -48,8 +46,8 @@ fun NicknameInput(
         shape = RoundedCornerShape(16.dp),
         leadingIcon = {
             Icon(
-                painter = painterResource(id = R.drawable.ic_person),
-                contentDescription = "유저 아이콘",
+                painter = painterResource(id = R.drawable.ic_lock),
+                contentDescription = "자물쇠 아이콘",
                 tint = Color.Black,
                 modifier = Modifier.size(24.dp)
             )

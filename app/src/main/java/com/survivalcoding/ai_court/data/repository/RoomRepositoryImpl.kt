@@ -36,19 +36,21 @@ class RoomRepositoryImpl @Inject constructor(
     // 로컬 캐시 (getRoom API가 없으므로 생성/입장 시 저장)
     private val _currentRoom = MutableStateFlow<Room?>(null)
 
-    private var loggedInNickname: String? = null
+    // nickname만으로 로그인 캐시하면 password가 달라질 때 문제가 생김
+    private var loggedInKey: String? = null
 
-    private suspend fun ensureLoggedIn(nickname: String): Resource<Unit> {
-        // 같은 닉네임이면 이미 로그인했다고 가정(세션 유지)
-        if (loggedInNickname == nickname) return Resource.Success(Unit)
+    // (nickname, password)로 로그인 보장
+    private suspend fun ensureLoggedIn(nickname: String, password: String): Resource<Unit> {
+        val key = "$nickname:$password"
+        if (loggedInKey == key) return Resource.Success(Unit)
 
         return try {
-            // 닉네임/비번을 동일하게 쓰는 현재 프로젝트 방식(로그에 이렇게 찍힘)
-            val body = roomApiService.login(LoginRequestDto(nickname, nickname))
+            // password를 nickname으로 고정하지 말고 전달받은 password 사용
+            val body = roomApiService.login(LoginRequestDto(nickname, password))
             if (!body.success) {
                 Resource.Error(body.result, body.code)
             } else {
-                loggedInNickname = nickname
+                loggedInKey = key
                 Resource.Success(Unit)
             }
         } catch (e: Exception) {
@@ -56,8 +58,9 @@ class RoomRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun createRoom(hostNickname: String): Resource<Room> {
-        val login = ensureLoggedIn(hostNickname)
+    // createRoom에 password 추가(인터페이스 기본값 덕에 기존 호출도 유지됨)
+    override suspend fun createRoom(hostNickname: String, hostPassword: String): Resource<Room> {
+        val login = ensureLoggedIn(hostNickname, hostPassword)
         if (login is Resource.Error) return login
 
         return try {
@@ -68,7 +71,6 @@ class RoomRepositoryImpl @Inject constructor(
                 _currentRoom.value = room
                 Resource.Success(room)
             } else {
-                // 실패 result가 문자열이어도 안전
                 val msg = response.result.jsonPrimitive.content
                 Resource.Error(msg, response.code)
             }
@@ -77,8 +79,13 @@ class RoomRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun joinRoom(roomCode: String, guestNickname: String): Resource<Room> {
-        val login = ensureLoggedIn(guestNickname)
+    // joinRoom에 password 추가(인터페이스 기본값 덕에 기존 호출도 유지됨)
+    override suspend fun joinRoom(
+        roomCode: String,
+        guestNickname: String,
+        guestPassword: String
+    ): Resource<Room> {
+        val login = ensureLoggedIn(guestNickname, guestPassword)
         if (login is Resource.Error) return login
 
         return try {
@@ -93,7 +100,6 @@ class RoomRepositoryImpl @Inject constructor(
                 _currentRoom.value = room
                 Resource.Success(room)
             } else {
-                // “User not logged in”, “이미 입장한 채팅방”, “잘못된 코드” 전부 여기로 안전하게 옴
                 val msg = response.result.jsonPrimitive.content
                 Resource.Error(msg, response.code)
             }
@@ -103,7 +109,6 @@ class RoomRepositoryImpl @Inject constructor(
     }
 
     override fun observeRoom(roomCode: String): Flow<Room> {
-        // getRoom API가 없으므로 로컬 캐시된 Room을 반환
         return _currentRoom.filterNotNull()
     }
 
@@ -134,45 +139,48 @@ class RoomRepositoryImpl @Inject constructor(
         )
     }
 
+    // ✅ CHANGED: password 파라미터 추가(기본값은 인터페이스에 있어서 기존 호출 유지됨)
     override suspend fun requestExit(
         chatRoomId: Long,
-        user: DomainUser
+        user: DomainUser,
+        password: String
     ): ExitRequestResponseDto {
-        val login = ensureLoggedIn(user.nickname)
+        val login = ensureLoggedIn(user.nickname, password)
         if (login is Resource.Error) throw IllegalStateException(login.message ?: "로그인 실패")
 
         val response = roomApiService.requestExit(
             chatRoomId = chatRoomId,
-            user = user.toExitQueryMap()
+            user = user.toExitQueryMap(password)
         )
         return response.result
     }
 
+    // password 파라미터 추가(기본값은 인터페이스에 있어서 기존 호출 유지됨)
     override suspend fun decideExit(
         chatRoomId: Long,
         user: DomainUser,
-        approve: Boolean
+        approve: Boolean,
+        password: String
     ): ExitDecisionResponseDto {
-        val login = ensureLoggedIn(user.nickname)
+        val login = ensureLoggedIn(user.nickname, password)
         if (login is Resource.Error) throw IllegalStateException(login.message ?: "로그인 실패")
 
         val response = roomApiService.decideExit(
             chatRoomId = chatRoomId,
-            user = user.toExitQueryMap(),
+            user = user.toExitQueryMap(password),
             body = ExitDecisionRequestDto(approve = approve)
         )
         return response.result
     }
 
-    private fun DomainUser.toExitQueryMap(): Map<String, String> {
+    // password를 인자로 받아서 query에 넣기
+    private fun DomainUser.toExitQueryMap(password: String): Map<String, String> {
         val idLong = sessionId.toLongOrNull() ?: 0L
 
         return buildMap {
             put("id", idLong.toString())
             put("nickname", nickname)
-            // 너희 프로젝트는 login(password)에 nickname을 그대로 쓰고 있으니 동일하게 맞춤 :contentReference[oaicite:1]{index=1}
-            put("password", nickname)
-            // createdAt/modifiedAt은 보통 필요 없어서 생략
+            put("password", password) // (기존 nickname 고정 제거)
         }
     }
 }

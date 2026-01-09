@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.survivalcoding.ai_court.core.component.CourtButton
 import com.survivalcoding.ai_court.presentation.entry.component.LogoSection
 import com.survivalcoding.ai_court.presentation.entry.component.NicknameInput
+import com.survivalcoding.ai_court.presentation.entry.component.PasswordInput
 import com.survivalcoding.ai_court.presentation.entry.viewmodel.EntryViewModel
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
@@ -52,7 +53,7 @@ fun EntryScreen(
         }
     }
 
-    Column (
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(
@@ -72,15 +73,15 @@ fun EntryScreen(
             // 로고/타이틀
             LogoSection()
 
-            Spacer(modifier = Modifier.height(70.dp))
+            Spacer(modifier = Modifier.height(75.dp))
 
             Text(
-                text = "닉네임",
+                text = "로그인",
                 style = AI_COURTTheme.typography.Body_1,
                 color = AI_COURTTheme.colors.black
             )
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(20.dp))
 
             NicknameInput(
                 value = uiState.nickname,
@@ -90,7 +91,17 @@ fun EntryScreen(
                 }
             )
 
-            Spacer(Modifier.height(93.dp))
+            Spacer(Modifier.height(10.dp))
+
+            PasswordInput(
+                value = uiState.password,
+                onValueChange = {
+                    joinError = null
+                    viewModel.onPasswordChanged(it)
+                }
+            )
+
+            Spacer(Modifier.height(35.dp))
 
             // 방 만들기 버튼
             CourtButton(
