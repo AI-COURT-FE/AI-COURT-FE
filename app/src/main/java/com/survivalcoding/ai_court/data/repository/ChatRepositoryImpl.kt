@@ -42,6 +42,7 @@ class ChatRepositoryImpl @Inject constructor(
     private val _finishRequestNickname = MutableStateFlow<String?>(null)
     private val _isConnected = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
+    private val _opponentNickname = MutableStateFlow<String?>(null)
 
     private var currentRoomCode: String? = null
     private var currentChatRoomId: Long? = null
@@ -84,25 +85,34 @@ class ChatRepositoryImpl @Inject constructor(
                             if (response.success) {
                                 val pollData = response.result
 
-                                // 새 메시지가 있으면 추가
+                                //  메시지 처리: 첫 폴링(lastMessageId == null)이면 "전체 교체", 이후에는 "append"
                                 if (pollData.messages.isNotEmpty()) {
-                                    val base = lastMessageId ?: 0L
+                                    // id null이면 0으로 보고 정렬/필터
+                                    val sorted = pollData.messages.sortedBy { it.messageId ?: 0L }
 
-                                    val filtered = pollData.messages
-                                        .filter { (it.messageId ?: 0L) > base }    // null이면 0으로
-                                        .sortedBy { it.messageId ?: 0L }           // null이면 0으로 정렬
-
-                                    if (filtered.isNotEmpty()) {
-                                        val newMessages = filtered.map { dto ->
+                                    if (lastMessageId == null) {
+                                        // 최초(또는 재접속): 서버가 준 전체 대화를 그대로 "교체"
+                                        _messages.value = sorted.map { dto ->
                                             dto.toDomain(myNickname = currentUserNickname.orEmpty())
                                         }
-                                        _messages.value = _messages.value + newMessages
+                                    } else {
+                                        val base = lastMessageId ?: 0L
 
-                                        // maxOf 대신 maxOrNull로 명확하게
-                                        val newLast = filtered.mapNotNull { it.messageId }.maxOrNull()
-                                        if (newLast != null) lastMessageId = newLast
+                                        // 이후 폴링: lastMessageId 이후만 append
+                                        val onlyNew = sorted
+                                            .filter { (it.messageId ?: 0L) > base }
+                                            .map { dto -> dto.toDomain(myNickname = currentUserNickname.orEmpty()) }
+
+                                        if (onlyNew.isNotEmpty()) {
+                                            _messages.value = _messages.value + onlyNew
+                                        }
                                     }
+
+                                    // lastMessageId는 항상 "최대"로 갱신
+                                    val newLast = sorted.mapNotNull { it.messageId }.maxOrNull()
+                                    if (newLast != null) lastMessageId = newLast
                                 }
+
 
                                 // 상태 업데이트
                                 _chatRoomStatus.value =
@@ -113,6 +123,10 @@ class ChatRepositoryImpl @Inject constructor(
                                 val percentMap = pollData.percent
                                 if (percentMap.isNotEmpty()) {
                                     val me = currentUserNickname
+
+                                    val opponent = percentMap.keys.firstOrNull { it != me }
+                                    _opponentNickname.value = opponent
+
                                     val myScore = if (me != null) percentMap[me] else null
 
                                     if (myScore != null) {
@@ -162,6 +176,9 @@ class ChatRepositoryImpl @Inject constructor(
         currentChatRoomId = null
         currentUserId = null
         lastMessageId = null
+
+        // 선택
+        _messages.value = emptyList()
     }
 
     override suspend fun sendMessage(content: String): Resource<Unit> {
@@ -247,5 +264,7 @@ class ChatRepositoryImpl @Inject constructor(
             isMyMessage = isMyMessage
         )
     }
+
+    override fun observeOpponentNickname(): Flow<String?> = _opponentNickname.asStateFlow()
 
 }

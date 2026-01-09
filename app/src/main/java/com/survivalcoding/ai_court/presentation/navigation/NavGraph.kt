@@ -101,7 +101,6 @@ fun CourtNavGraph(
                 roomCode = roomCode,
                 myUserId = generatedUserId,
                 myNickname = nickname,           // 중요 (nickname= 말고 myNickname=)
-                opponentNickname = "상대",
                 onNavigateBack = {
                     navController.navigate(Route.Entry.route) {
                         popUpTo(Route.Entry.route) { inclusive = true }
