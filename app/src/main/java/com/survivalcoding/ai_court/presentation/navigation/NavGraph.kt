@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.Key.Companion.J
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -110,26 +109,18 @@ fun CourtNavGraph(
             )
         }
 
+        // verdict/{chatRoomId}
         composable(
-            route = Route.Verdict.route,
-            arguments = listOf(navArgument("roomCode") { type = NavType.StringType },)
+            route = "verdict/{chatRoomId}",
+            arguments = listOf(navArgument("chatRoomId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val roomCode = backStackEntry.arguments?.getString("roomCode").orEmpty()
-            val chatViewModel: ChatViewModel = hiltViewModel()
-            val chatState by chatViewModel.uiState.collectAsStateWithLifecycle()
+            val chatRoomId = backStackEntry.arguments?.getLong("chatRoomId") ?: 0L
 
             VerdictScreen(
-                roomCode = roomCode,
-                leftName = chatState.myNickname,
-                rightName = chatState.opponentNickname ?: "상대",
+                chatRoomId = chatRoomId,
                 onNavigateBack = { navController.popBackStack() },
-                onShareVerdict = {},
-                onGoEntry = {
-                    navController.navigate(Route.Entry.route) {
-                        popUpTo(Route.Entry.route) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
+                onShareVerdict = { /* TODO */ },
+                onGoEntry = { /* TODO */ }
             )
         }
     }

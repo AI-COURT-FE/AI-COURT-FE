@@ -21,52 +21,28 @@ class VerdictViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(VerdictUiState())
     val uiState: StateFlow<VerdictUiState> = _uiState.asStateFlow()
 
-    /**
-     * 최종 판결문 1회 요청용
-     * 실시간 verdict는 여기서 다루지 않음
-     */
-    fun loadFinalVerdict(roomCode: String, leftName: String, rightName: String) {
-        if (roomCode.isBlank()) {
-            _uiState.update { it.copy(isLoading = false, errorMessage = "roomCode가 비어있습니다.") }
+    fun loadFinalVerdict(chatRoomId: Long) {
+        if (chatRoomId <= 0L) {
+            _uiState.update { it.copy(isLoading = false, errorMessage = "chatRoomId가 올바르지 않습니다.") }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            when (val res = finalVerdictRepository.requestFinalVerdict(roomCode)) {
-                is Resource.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            finalVerdict = res.data,
-                            errorMessage = null
-                        )
-                    }
+            when (val res = finalVerdictRepository.getFinalJudgement(chatRoomId)) {
+                is Resource.Success -> _uiState.update {
+                    it.copy(isLoading = false, finalVerdict = res.data, errorMessage = null)
                 }
-
-                is Resource.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = res.message ?: "최종 판결 요청 실패"
-                        )
-                    }
+                is Resource.Error -> _uiState.update {
+                    it.copy(isLoading = false, errorMessage = res.message ?: "최종 판결 조회 실패")
                 }
-
-                is Resource.Loading -> {
-                    // Loading 타입이 있는 Resource면 여기로 들어올 수 있음
-                    _uiState.update { it.copy(isLoading = true) }
-                }
+                is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
             }
         }
     }
 
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
-    }
-
-    fun clearVerdict() {
-        _uiState.update { it.copy(finalVerdict = null) }
     }
 }

@@ -8,21 +8,23 @@ import kotlinx.serialization.Serializable
 data class FinalVerdictResponse(
     @SerialName("winner_nickname") val winnerNickname: String = "",
     @SerialName("loser_nickname") val loserNickname: String = "",
-    @SerialName("logic_score_A") val logicA: Int,
-    @SerialName("logic_score_B") val logicB: Int,
-    @SerialName("empathy_score_A") val empathyA: Int,
-    @SerialName("empathy_score_B") val empathyB: Int,
-    @SerialName("reason") val reason: String = "",
-    @SerialName("summary") val summary: List<String> = emptyList()
+    @SerialName("logic_score_A") val plaintiffLogicScore: Int,
+    @SerialName("logic_score_B") val defendantLogicScore: Int,
+    @SerialName("empathy_score_A") val plaintiffEmpathyScore: Int,
+    @SerialName("empathy_score_B") val defendantEmpathyScore: Int,
+    @SerialName("judgmentComment") val judgmentComment : String,
+    @SerialName("winnerReason") val winnerReason: String = "",
+    @SerialName("loserReason") val loserReason: String = "",
 ) {
     fun toDomain(): FinalVerdict = FinalVerdict(
         winnerNickname = winnerNickname,
         loserNickname = loserNickname,
-        logicA = logicA,
-        logicB = logicB,
-        empathyA = empathyA,
-        empathyB = empathyB,
-        reason = reason,
-        summary = summary
+        plaintiffLogicScore = plaintiffLogicScore,
+        defendantLogicScore = defendantLogicScore,
+        plaintiffEmpathyScore = plaintiffEmpathyScore,
+        defendantEmpathyScore = defendantEmpathyScore,
+        judgmentComment = judgmentComment,
+        winnerReason = winnerReason,
+        loserReason = loserReason
     )
 }

@@ -61,6 +61,7 @@ class WaitingViewModel @Inject constructor(
 
                         val participants = data.percent.keys.toList()
                         val count = data.percent.size
+                        val hasOpponent = count >= 2 || data.messages.isNotEmpty()
 
                         _uiState.update {
                             it.copy(
@@ -72,8 +73,8 @@ class WaitingViewModel @Inject constructor(
                             )
                         }
 
-                        // ✅ 핵심: percent에 두 명이면 호스트도 채팅방으로
-                        if (!navigated && count >= 2) {
+                        // 핵심: percent에 두 명이면 호스트도 채팅방으로
+                        if (!navigated && hasOpponent) {
                             navigated = true
                             stopPolling()
                             _events.tryEmit(
