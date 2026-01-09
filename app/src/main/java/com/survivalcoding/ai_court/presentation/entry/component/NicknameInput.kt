@@ -34,7 +34,7 @@ fun NicknameInput(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "닉네임을 입력하세요",
+    placeholder: String = "닉네임",
     height: Dp = 54.dp
 ) {
     OutlinedTextField(
@@ -43,7 +43,7 @@ fun NicknameInput(
         modifier = modifier
             .fillMaxWidth()
             .height(height),
-        placeholder = { Text(text = placeholder, color = AI_COURTTheme.colors.gray500) },
+        placeholder = { Text(text = placeholder, color = AI_COURTTheme.colors.gray500, style = AI_COURTTheme.typography.Body_1) },
         singleLine = true,
         shape = RoundedCornerShape(16.dp),
         leadingIcon = {

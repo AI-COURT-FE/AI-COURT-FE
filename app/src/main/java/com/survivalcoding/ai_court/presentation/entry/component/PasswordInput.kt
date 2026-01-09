@@ -32,7 +32,7 @@ fun PasswordInput(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "비밀번호를 입력하세요",
+    placeholder: String = "비밀번호",
     height: Dp = 54.dp
 ) {
     OutlinedTextField(
@@ -41,7 +41,7 @@ fun PasswordInput(
         modifier = modifier
             .fillMaxWidth()
             .height(height),
-        placeholder = { Text(text = placeholder, color = AI_COURTTheme.colors.gray500) },
+        placeholder = { Text(text = placeholder, color = AI_COURTTheme.colors.gray500, style = AI_COURTTheme.typography.Body_1) },
         singleLine = true,
         shape = RoundedCornerShape(16.dp),
         leadingIcon = {

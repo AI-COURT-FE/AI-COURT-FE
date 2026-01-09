@@ -36,21 +36,21 @@ class RoomRepositoryImpl @Inject constructor(
     // 로컬 캐시 (getRoom API가 없으므로 생성/입장 시 저장)
     private val _currentRoom = MutableStateFlow<Room?>(null)
 
-    // ✅ CHANGED: nickname만으로 로그인 캐시하면 password가 달라질 때 문제가 생김
-    private var loggedInKey: String? = null // ✅ ADDED
+    // nickname만으로 로그인 캐시하면 password가 달라질 때 문제가 생김
+    private var loggedInKey: String? = null
 
-    // ✅ CHANGED: (nickname, password)로 로그인 보장
-    private suspend fun ensureLoggedIn(nickname: String, password: String): Resource<Unit> { // ✅ CHANGED
-        val key = "$nickname:$password" // ✅ ADDED
-        if (loggedInKey == key) return Resource.Success(Unit) // ✅ CHANGED
+    // (nickname, password)로 로그인 보장
+    private suspend fun ensureLoggedIn(nickname: String, password: String): Resource<Unit> {
+        val key = "$nickname:$password"
+        if (loggedInKey == key) return Resource.Success(Unit)
 
         return try {
-            // ✅ CHANGED: password를 nickname으로 고정하지 말고 전달받은 password 사용
-            val body = roomApiService.login(LoginRequestDto(nickname, password)) // ✅ CHANGED
+            // password를 nickname으로 고정하지 말고 전달받은 password 사용
+            val body = roomApiService.login(LoginRequestDto(nickname, password))
             if (!body.success) {
                 Resource.Error(body.result, body.code)
             } else {
-                loggedInKey = key // ✅ CHANGED
+                loggedInKey = key
                 Resource.Success(Unit)
             }
         } catch (e: Exception) {
@@ -58,9 +58,9 @@ class RoomRepositoryImpl @Inject constructor(
         }
     }
 
-    // ✅ CHANGED: createRoom에 password 추가(인터페이스 기본값 덕에 기존 호출도 유지됨)
-    override suspend fun createRoom(hostNickname: String, hostPassword: String): Resource<Room> { // ✅ CHANGED
-        val login = ensureLoggedIn(hostNickname, hostPassword) // ✅ CHANGED
+    // createRoom에 password 추가(인터페이스 기본값 덕에 기존 호출도 유지됨)
+    override suspend fun createRoom(hostNickname: String, hostPassword: String): Resource<Room> {
+        val login = ensureLoggedIn(hostNickname, hostPassword)
         if (login is Resource.Error) return login
 
         return try {
@@ -79,13 +79,13 @@ class RoomRepositoryImpl @Inject constructor(
         }
     }
 
-    // ✅ CHANGED: joinRoom에 password 추가(인터페이스 기본값 덕에 기존 호출도 유지됨)
+    // joinRoom에 password 추가(인터페이스 기본값 덕에 기존 호출도 유지됨)
     override suspend fun joinRoom(
         roomCode: String,
         guestNickname: String,
         guestPassword: String
-    ): Resource<Room> { // ✅ CHANGED
-        val login = ensureLoggedIn(guestNickname, guestPassword) // ✅ CHANGED
+    ): Resource<Room> {
+        val login = ensureLoggedIn(guestNickname, guestPassword)
         if (login is Resource.Error) return login
 
         return try {
@@ -144,43 +144,43 @@ class RoomRepositoryImpl @Inject constructor(
         chatRoomId: Long,
         user: DomainUser,
         password: String
-    ): ExitRequestResponseDto { // ✅ CHANGED
-        val login = ensureLoggedIn(user.nickname, password) // ✅ CHANGED
+    ): ExitRequestResponseDto {
+        val login = ensureLoggedIn(user.nickname, password)
         if (login is Resource.Error) throw IllegalStateException(login.message ?: "로그인 실패")
 
         val response = roomApiService.requestExit(
             chatRoomId = chatRoomId,
-            user = user.toExitQueryMap(password) // ✅ CHANGED
+            user = user.toExitQueryMap(password)
         )
         return response.result
     }
 
-    // ✅ CHANGED: password 파라미터 추가(기본값은 인터페이스에 있어서 기존 호출 유지됨)
+    // password 파라미터 추가(기본값은 인터페이스에 있어서 기존 호출 유지됨)
     override suspend fun decideExit(
         chatRoomId: Long,
         user: DomainUser,
         approve: Boolean,
         password: String
-    ): ExitDecisionResponseDto { // ✅ CHANGED
-        val login = ensureLoggedIn(user.nickname, password) // ✅ CHANGED
+    ): ExitDecisionResponseDto {
+        val login = ensureLoggedIn(user.nickname, password)
         if (login is Resource.Error) throw IllegalStateException(login.message ?: "로그인 실패")
 
         val response = roomApiService.decideExit(
             chatRoomId = chatRoomId,
-            user = user.toExitQueryMap(password), // ✅ CHANGED
+            user = user.toExitQueryMap(password),
             body = ExitDecisionRequestDto(approve = approve)
         )
         return response.result
     }
 
-    // ✅ CHANGED: password를 인자로 받아서 query에 넣기
-    private fun DomainUser.toExitQueryMap(password: String): Map<String, String> { // ✅ CHANGED
+    // password를 인자로 받아서 query에 넣기
+    private fun DomainUser.toExitQueryMap(password: String): Map<String, String> {
         val idLong = sessionId.toLongOrNull() ?: 0L
 
         return buildMap {
             put("id", idLong.toString())
             put("nickname", nickname)
-            put("password", password) // ✅ CHANGED (기존 nickname 고정 제거)
+            put("password", password) // (기존 nickname 고정 제거)
         }
     }
 }
