@@ -24,8 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -116,16 +120,21 @@ fun JoinInputBox(
                         contentAlignment = Alignment.Center
                     ) {
                         BasicTextField(
-                            value = roomCode,
+                            value = roomCode, // roomCode는 하이픈 없는 "원본"이라고 가정 (예: "12345")
                             onValueChange = { raw ->
-                                onRoomCodeChange(formatRoomCodeAllowHyphen(raw))
+                                val cleaned = raw
+                                    .uppercase()
+                                    .filter { it.isLetterOrDigit() } // '-' 포함해서 붙여넣어도 제거됨
+                                    .take(8)
+                                onRoomCodeChange(cleaned)
                             },
                             singleLine = true,
                             textStyle = AI_COURTTheme.typography.Title_1.copy(
                                 color = AI_COURTTheme.colors.black,
-                                textAlign = TextAlign.Center // ✅ 입력 텍스트도 중앙
+                                textAlign = TextAlign.Center
                             ),
                             modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = RoomCodeVisualTransformation(), // 여기 핵심
                             decorationBox = { innerTextField ->
                                 if (roomCode.isBlank()) {
                                     Text(
@@ -143,6 +152,7 @@ fun JoinInputBox(
                                 imeAction = ImeAction.Done
                             )
                         )
+
                     }
                 }
             }
@@ -150,31 +160,38 @@ fun JoinInputBox(
     }
 }
 
-private fun formatRoomCodeAllowHyphen(input: String): String {
-    // 영문/숫자/하이픈만 허용
-    val allowed = input
-        .uppercase()
-        .filter { it.isLetterOrDigit() || it == '-' }
+private class RoomCodeVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val original = text.text
 
-    // 하이픈 제거한 순수 8자리만 추출
-    val alnum = allowed.filter { it.isLetterOrDigit() }.take(8)
-
-    // 사용자가 하이픈을 쳤거나/붙여넣었는지 감지 (원하면 굳이 안 써도 됨)
-    val hasHyphen = allowed.contains('-')
-
-    return when {
-        alnum.length <= 4 -> {
-            // 4자리 이하에서는 사용자가 하이픈 눌러도 굳이 표시 안 함(원하면 표시 가능)
-            alnum
+        val transformed = buildString {
+            if (original.length < 4) {
+                append(original)
+            } else {
+                // 4자리 되는 순간 바로 하이픈 표시 (1234-)
+                append(original.substring(0, 4))
+                append('-')
+                if (original.length > 4) {
+                    append(original.substring(4))
+                }
+            }
         }
-        else -> {
-            // 5자리 이상이면 자동으로 4-나머지
-            alnum.substring(0, 4) + "-" + alnum.substring(4)
+
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                // 4자리 이상이면 하이픈 1칸 추가되므로 커서도 1칸 뒤로
+                return if (offset < 4) offset else offset + 1
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                // transformed에서 '-'(index 4) 뒤(>=5)는 원본에서는 -1
+                return if (offset <= 4) offset else offset - 1
+            }
         }
+
+        return TransformedText(AnnotatedString(transformed), offsetMapping)
     }
 }
-
-
 
 @Preview(showBackground = true)
 @Composable
