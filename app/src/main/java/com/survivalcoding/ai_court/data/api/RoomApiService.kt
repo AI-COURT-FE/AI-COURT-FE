@@ -29,7 +29,7 @@ interface RoomApiService {
     suspend fun pollChatRoom(
         @Query("chatRoomId") chatRoomId: Long,
         @Query("lastMessageId") lastMessageId: Long? = null
-    ): BaseResponse<com.survivalcoding.ai_court.data.model.response.PollResponseDto>
+    ): BaseResponse<PollResponseDto>
 
     // 로그인: 세션 생성
     @POST("login")

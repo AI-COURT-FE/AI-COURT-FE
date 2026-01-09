@@ -9,11 +9,5 @@ data class PollResponseDto(
     val messages: List<ChatMessageDto>,
     val chatRoomStatus: String,
     val finishRequestNickname: String? = null,
-    val percent: PercentDto
-)
-
-@Serializable
-data class PercentDto(
-    val A: Int,
-    val B: Int
+    val percent: Map<String, Int>
 )

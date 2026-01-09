@@ -127,49 +127,55 @@ class EntryViewModel @Inject constructor(
             }
         }
     }
-
     fun joinRoom() {
-        val nickname = _uiState.value.nickname
-        val roomCode = _uiState.value.roomCode
+        val state = _uiState.value
+        val nickname = state.nickname
+
+        // 1. 모든 공백과 하이픈을 제거하여 순수 데이터만 추출
+        val cleanCode = state.roomCode.replace("-", "").replace(" ", "")
+
+        // 2. 8자리 검증 및 하이픈 재조합 (서버 포맷: XXXX-XXXX)
+        if (cleanCode.length != 8) {
+            _uiState.update { it.copy(errorMessage = "방 코드는 8자리여야 합니다.") }
+            return
+        }
+        val formattedRoomCode = "${cleanCode.substring(0, 4)}-${cleanCode.substring(4)}"
 
         if (nickname.isBlank()) {
             _uiState.update { it.copy(errorMessage = "닉네임을 입력해주세요") }
-            return
-        }
-        if (roomCode.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "방 코드를 입력해주세요") }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            when (val result = roomRepository.joinRoom(roomCode, nickname)) {
+            // 3. 로그인 체크 (비밀번호 규칙을 닉네임과 동일하게 통일)
+            if (!ensureLoginOrShowError()) {
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
+
+            // 4. 정제된 formattedRoomCode 전달
+            when (val result = roomRepository.joinRoom(formattedRoomCode, nickname)) {
                 is Resource.Success -> {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             navigateToChat = NavigateToChatEvent(
-                                roomCode = roomCode,
+                                roomCode = formattedRoomCode,
                                 userId = userId,
                                 nickname = nickname
                             )
                         )
                     }
                 }
-
                 is Resource.Error -> {
-                    _uiState.update {
-                        it.copy(isLoading = false, errorMessage = result.message)
-                    }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
                 }
-
-                is Resource.Loading -> { /* handled by isLoading state */
-                }
+                is Resource.Loading -> {}
             }
         }
     }
-
     fun onNavigationHandled() {
         _uiState.update { it.copy(navigateToChat = null) }
     }
