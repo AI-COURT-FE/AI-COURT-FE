@@ -9,8 +9,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -23,54 +24,69 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.survivalcoding.ai_court.presentation.waiting.component.InfoBanner
 import com.survivalcoding.ai_court.presentation.waiting.component.WaitingBox
 import com.survivalcoding.ai_court.presentation.waiting.viewmodel.WaitingViewModel
-import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
+import kotlinx.coroutines.flow.collectLatest
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WaitingScreen(
-    roomCode: String,
-    onNavigateToChat: () -> Unit,
-    onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier,
+    inviteCode: String,                 // 화면 표시/복사할 코드
+    chatRoomId: Long,                   // pollChatRoom에 넣을 ID
+    onNavigateToChat: (chatRoomId: Long, inviteCode: String) -> Unit,
     viewModel: WaitingViewModel = hiltViewModel()
 ) {
-    val clipboardManager = LocalClipboardManager.current
-    val scrollState =  rememberScrollState()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val clipboardManager = LocalClipboardManager.current
 
-    LaunchedEffect(roomCode) {
-        viewModel.start(roomCode)
+    // 폴링 시작
+    LaunchedEffect(inviteCode, chatRoomId) {
+        viewModel.startPolling(inviteCode = inviteCode, chatRoomId = chatRoomId)
     }
 
+    // 네비게이션 이벤트 수신
     LaunchedEffect(Unit) {
-        viewModel.events.collect {
-            onNavigateToChat()
+        viewModel.events.collectLatest { event ->
+            when (event) {
+                is com.survivalcoding.ai_court.presentation.waiting.state.WaitingUiEvent.NavigateToChat -> {
+                    onNavigateToChat(event.chatRoomId, event.inviteCode)
+                }
+            }
         }
     }
 
-    Column (
-        modifier= modifier
-            .fillMaxSize()
-            .background(color= AI_COURTTheme.colors.cream)
-            .verticalScroll(scrollState)
-            .systemBarsPadding(),
+    // 화면 떠날 때 폴링 종료
+    DisposableEffect(Unit) {
+        onDispose { viewModel.stopPolling() }
+    }
 
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
-    ){
-        ChatTopBar(roomCode= roomCode,
-            onNavigateBack = onNavigateBack)
-        Spacer(modifier= Modifier.height(68.dp))
-        WaitingBox(roomCode= roomCode,
+    ) {
+        // 상단바: 초대코드 표시(기존 컴포넌트 그대로 사용)
+        ChatTopBar(roomCode = inviteCode, onNavigateBack = { /* 필요하면 추가 */ })
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // 초대코드 박스: 복사도 초대코드 기준
+        WaitingBox(
+            roomCode = inviteCode,
             onCopyRoomCode = {
-            clipboardManager.setText(AnnotatedString(roomCode))
-        }
-            )
-        Spacer(modifier= Modifier.height(25.dp))
+                clipboardManager.setText(AnnotatedString(inviteCode))
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 참가자 수 표시를 하고 싶으면 여기서 사용 가능
+        // 예: Text("참여자: ${uiState.participantCount}/2")
+
+        Spacer(modifier = Modifier.height(25.dp))
 
         InfoBanner()
 
-        Spacer(modifier= Modifier.height(112.dp))
+        Spacer(modifier = Modifier.height(112.dp))
     }
-
 }
-
