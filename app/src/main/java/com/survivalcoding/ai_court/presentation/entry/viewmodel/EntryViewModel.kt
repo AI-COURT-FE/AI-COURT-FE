@@ -92,7 +92,8 @@ class EntryViewModel @Inject constructor(
                             isWaitingForOpponent = true,
                             navigateToChat = NavigateToChatEvent(
                                 roomCode = inviteCode,
-                                chatRoomId = chatRoomId
+                                chatRoomId = chatRoomId,
+                                nickname = it.nickname
                             )
                         )
                     }
@@ -167,7 +168,8 @@ class EntryViewModel @Inject constructor(
             it.copy(
                 navigateToChat = NavigateToChatEvent(
                     roomCode = "TEST123",
-                    chatRoomId = 123L
+                    chatRoomId = 123L,
+                    nickname = "djfd"
                 )
             )
         }

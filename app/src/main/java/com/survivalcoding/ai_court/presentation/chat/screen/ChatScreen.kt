@@ -6,6 +6,7 @@ import ChatTopBar
 import WinRateHeader
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +48,7 @@ import com.survivalcoding.ai_court.presentation.chat.component.JudgeConfirmDialo
 import com.survivalcoding.ai_court.presentation.chat.state.ChatUiState
 import com.survivalcoding.ai_court.presentation.chat.viewmodel.ChatViewModel
 import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
+import java.util.UUID
 
 @Composable
 private fun ChatScreenContent(
@@ -58,6 +61,11 @@ private fun ChatScreenContent(
     onConfirmVerdict: () -> Unit
 ) {
     val listState = rememberLazyListState()
+    LaunchedEffect(uiState.messages.size) {
+        if (uiState.messages.isNotEmpty()) {
+            listState.animateScrollToItem(uiState.messages.size - 1)
+        }
+    }
 
     Column(
         Modifier
@@ -141,7 +149,10 @@ private fun ChatScreenContent(
                     .padding(1.dp)
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF292D47)),
+                    .background(Color(0xFF292D47))
+                    .clickable(
+                        enabled = uiState.inputMessage.isNotBlank()  // 입력 없으면 비활성 추천(변수명은 네 코드에 맞게)
+                    ) { onSendClick() },
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -171,10 +182,13 @@ fun ChatScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val fallbackUserId = rememberSaveable { UUID.randomUUID().toString() }
+    val userIdToUse = if (myUserId.isBlank()) fallbackUserId else myUserId
+
     // 화면 진입 시 한 번만 초기화
-    LaunchedEffect(roomCode, myUserId) {
-        if (roomCode.isNotBlank() && myUserId.isNotBlank()) {
-            viewModel.initialize(roomCode, myUserId, myNickname, opponentNickname)
+    LaunchedEffect(roomCode, userIdToUse) {
+        if (roomCode.isNotBlank()) {
+            viewModel.initialize(roomCode, userIdToUse, myNickname, opponentNickname)
         }
     }
 

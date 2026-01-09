@@ -8,7 +8,7 @@ import com.survivalcoding.ai_court.domain.model.WinRate
 import kotlinx.coroutines.flow.Flow
 
 interface ChatRepository {
-    fun connectToRoom(roomCode: String, userId: String)
+    fun connectToRoom(roomCode: String, userId: String, myNickname: String)
     fun disconnectFromRoom()
     suspend fun sendMessage(content: String): Resource<Unit>
     fun observeMessages(): Flow<List<ChatMessage>>

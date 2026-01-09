@@ -39,7 +39,11 @@ class ChatViewModel @Inject constructor(
         }
 
         // 폴링 시작 (connectToRoom)
-        chatRepository.connectToRoom(roomCode, userId)
+        chatRepository.connectToRoom(
+            roomCode = roomCode,
+            userId = userId,
+            myNickname = myNickname
+        )
         _uiState.update { it.copy(isConnected = true) }
 
         // 메시지 observe

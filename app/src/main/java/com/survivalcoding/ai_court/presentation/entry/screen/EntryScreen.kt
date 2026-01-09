@@ -33,7 +33,7 @@ import com.survivalcoding.ai_court.ui.theme.AI_COURTTheme
 
 @Composable
 fun EntryScreen(
-    onNavigateToWaiting: (inviteCode: String, chatRoomId: Long) -> Unit,
+    onNavigateToWaiting: (inviteCode: String, chatRoomId: Long, nickname: String) -> Unit,
     onNavigateToJoin: () -> Unit,
     viewModel: EntryViewModel = hiltViewModel()
 ) {
@@ -45,7 +45,9 @@ fun EntryScreen(
         uiState.navigateToChat?.let { event ->
             val inviteCode = event.roomCode
             val chatRoomId = event.chatRoomId
-            onNavigateToWaiting(inviteCode, chatRoomId)
+            val nickname = event.nickname
+
+            onNavigateToWaiting(inviteCode, chatRoomId, nickname)
             viewModel.onNavigationHandled()
         }
     }

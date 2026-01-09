@@ -32,8 +32,8 @@ fun CourtNavGraph(
     ) {
         composable(route = Route.Entry.route) {
             EntryScreen(
-                onNavigateToWaiting = { inviteCode, chatRoomId ->
-                    navController.navigate(Route.Waiting.createRoute(inviteCode, chatRoomId)) {
+                onNavigateToWaiting = { inviteCode, chatRoomId, nickname ->
+                    navController.navigate(Route.Waiting.createRoute(inviteCode, chatRoomId, nickname)) {
                         popUpTo(Route.Entry.route) { inclusive = true }
                     }
                 },
@@ -45,18 +45,19 @@ fun CourtNavGraph(
             route = Route.Waiting.route,
             arguments = listOf(
                 navArgument("inviteCode") { type = NavType.StringType },
-                navArgument("chatRoomId") { type = NavType.LongType }
+                navArgument("chatRoomId") { type = NavType.LongType },
+                navArgument("nickname") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val inviteCode = backStackEntry.arguments?.getString("inviteCode").orEmpty()
             val chatRoomId = backStackEntry.arguments?.getLong("chatRoomId") ?: -1L
+            val nickname = backStackEntry.arguments?.getString("nickname").orEmpty()
 
             WaitingScreen(
                 inviteCode = inviteCode,
                 chatRoomId = chatRoomId,
                 onNavigateToChat = { id, code ->
-                    // ChatScreen의 roomCode에는 chatRoomId를 string으로 넘김 (통일)
-                    navController.navigate(Route.Chat.createRoute(id.toString())) {
+                    navController.navigate(Route.Chat.createRoute(id.toString(), nickname)) {
                         popUpTo(Route.Waiting.route) { inclusive = true }
                     }
                 }
@@ -75,7 +76,7 @@ fun CourtNavGraph(
             JoinScreen(
                 nickname = entryState.nickname,
                 onJoinSuccess = { roomCode ->
-                    navController.navigate(Route.Chat.createRoute(roomCode)) {
+                    navController.navigate(Route.Chat.createRoute(roomCode, entryState.nickname)) {
                         popUpTo(Route.Join.route) { inclusive = true }
                     }
                 },
@@ -88,19 +89,19 @@ fun CourtNavGraph(
             route = Route.Chat.route,
             arguments = listOf(
                 navArgument("roomCode") { type = NavType.StringType },
-//                navArgument("userId") { type = NavType.StringType },
-//                navArgument("nickname") { type = NavType.StringType }
+                navArgument("nickname") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val roomCode = backStackEntry.arguments?.getString("roomCode") ?: ""
-//            val userId = backStackEntry.arguments?.getString("userId") ?: ""
-//            val nickname = backStackEntry.arguments?.getString("nickname") ?: ""
-            val userId = ""
-            val nickname = ""
+            val roomCode = backStackEntry.arguments?.getString("roomCode").orEmpty()
+            val nickname = backStackEntry.arguments?.getString("nickname").orEmpty()
+
+            val generatedUserId = remember(roomCode) { java.util.UUID.randomUUID().toString() }
 
             ChatScreen(
                 roomCode = roomCode,
-                myUserId = userId,
+                myUserId = generatedUserId,
+                myNickname = nickname,           // 중요 (nickname= 말고 myNickname=)
+                opponentNickname = "상대",
                 onNavigateBack = {
                     navController.navigate(Route.Entry.route) {
                         popUpTo(Route.Entry.route) { inclusive = true }
