@@ -122,19 +122,16 @@ fun JoinInputBox(
                         BasicTextField(
                             value = roomCode, // roomCode는 하이픈 없는 "원본"이라고 가정 (예: "12345")
                             onValueChange = { raw ->
-                                val cleaned = raw
-                                    .uppercase()
-                                    .filter { it.isLetterOrDigit() } // '-' 포함해서 붙여넣어도 제거됨
-                                    .take(8)
-                                onRoomCodeChange(cleaned)
+                                val digits = raw.filter { it.isDigit() }.take(8)
+                                onRoomCodeChange(digits)
                             },
+                            visualTransformation = RoomCodeVisualTransformation(), // ✅ 화면에만 ####-#### 표시 + 커서 보정
                             singleLine = true,
                             textStyle = AI_COURTTheme.typography.Title_1.copy(
                                 color = AI_COURTTheme.colors.black,
                                 textAlign = TextAlign.Center
                             ),
                             modifier = Modifier.fillMaxWidth(),
-                            visualTransformation = RoomCodeVisualTransformation(), // 여기 핵심
                             decorationBox = { innerTextField ->
                                 if (roomCode.isBlank()) {
                                     Text(
