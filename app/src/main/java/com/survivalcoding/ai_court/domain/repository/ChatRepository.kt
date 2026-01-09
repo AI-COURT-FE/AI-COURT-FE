@@ -21,5 +21,7 @@ interface ChatRepository {
     
     // 최종 판결 조회
     suspend fun getFinalJudgement(chatRoomId: Long): Resource<FinalJudgementResponseDto>
+
+    fun observeOpponentNickname(): Flow<String?>
 }
 

@@ -107,6 +107,15 @@ class ChatViewModel @Inject constructor(
                     }
                 }
         }
+        viewModelScope.launch {
+            chatRepository.observeOpponentNickname()
+                .catch { it.printStackTrace() }
+                .collect { opponent ->
+                    if (!opponent.isNullOrBlank()) {
+                        _uiState.update { s -> s.copy(opponentNickname = opponent) }
+                    }
+                }
+        }
     }
 
     fun onInputChange(text: String) {
@@ -202,5 +211,20 @@ class ChatViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         chatRepository.disconnectFromRoom()
+    }
+
+    fun reconnect() {
+        val roomCode = currentRoomCode ?: return
+        val userId = currentUserId ?: return
+        val nickname = _uiState.value.myNickname
+
+        viewModelScope.launch {
+            chatRepository.connectToRoom(
+                roomCode = roomCode,
+                userId = userId,
+                myNickname = nickname
+            )
+            _uiState.update { it.copy(isConnected = true) }
+        }
     }
 }
