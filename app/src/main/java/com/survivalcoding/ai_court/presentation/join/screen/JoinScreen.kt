@@ -120,12 +120,17 @@ fun JoinScreen(
 
             Spacer(modifier = Modifier.height(112.dp))
         }
-    }
-    if (uiState.isLoading) {
-        Spacer(modifier = Modifier.height(24.dp))
-        CircularProgressIndicator(
-            color = AI_COURTTheme.colors.navy
-        )
+
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = AI_COURTTheme.colors.navy)
+            }
+        }
     }
 
     if (uiState.blockingMessage != null) {
