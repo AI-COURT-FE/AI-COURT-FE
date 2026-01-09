@@ -81,23 +81,21 @@ class EntryViewModel @Inject constructor(
             when (val result = roomRepository.createRoom(_uiState.value.nickname)) {
                 is Resource.Success -> {
                     val room = result.data
+
+                    val inviteCode = room.roomCode
+                    val chatRoomId = room.hostUser.sessionId.toLong() // String -> Long
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            createdRoomCode = room.roomCode,
+                            createdRoomCode = inviteCode,
                             isWaitingForOpponent = true,
-
-                            // EntryScreen이 이 이벤트를 받으면 Waiting으로 이동함
                             navigateToChat = NavigateToChatEvent(
-                                roomCode = room.roomCode,
-                                userId = userId,
-                                nickname = it.nickname
+                                roomCode = inviteCode,
+                                chatRoomId = chatRoomId
                             )
                         )
                     }
-
-                    // Entry 화면은 Waiting으로 이동하면서 popUpTo로 사라짐 → 여기서 observeRoom 돌려도 의미 없음
-                    // observeRoom(room.roomCode)
                 }
 
                 is Resource.Error -> {
@@ -109,24 +107,6 @@ class EntryViewModel @Inject constructor(
         }
     }
 
-    private fun observeRoom(roomCode: String) {
-        viewModelScope.launch {
-            roomRepository.observeRoom(roomCode).collect { room ->
-                if (room.isReady && room.guestUser != null) {
-                    _uiState.update {
-                        it.copy(
-                            isWaitingForOpponent = false,
-                            navigateToChat = NavigateToChatEvent(
-                                roomCode = roomCode,
-                                userId = userId,
-                                nickname = _uiState.value.nickname
-                            )
-                        )
-                    }
-                }
-            }
-        }
-    }
     fun joinRoom() {
         val state = _uiState.value
         val nickname = state.nickname
@@ -158,17 +138,10 @@ class EntryViewModel @Inject constructor(
             // 4. 정제된 formattedRoomCode 전달
             when (val result = roomRepository.joinRoom(formattedRoomCode, nickname)) {
                 is Resource.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            navigateToChat = NavigateToChatEvent(
-                                roomCode = formattedRoomCode,
-                                userId = userId,
-                                nickname = nickname
-                            )
-                        )
-                    }
+                    _uiState.update { it.copy(isLoading = false) }
+                    // 여기서 navigateToChat 세팅하지 않음
                 }
+
                 is Resource.Error -> {
                     _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
                 }
@@ -194,8 +167,7 @@ class EntryViewModel @Inject constructor(
             it.copy(
                 navigateToChat = NavigateToChatEvent(
                     roomCode = "TEST123",
-                    userId = "testUser",
-                    nickname = "테스터"
+                    chatRoomId = 123L
                 )
             )
         }

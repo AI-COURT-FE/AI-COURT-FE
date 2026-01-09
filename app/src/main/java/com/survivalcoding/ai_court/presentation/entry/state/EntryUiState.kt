@@ -14,7 +14,6 @@ data class EntryUiState(
 )
 
 data class NavigateToChatEvent(
-    val roomCode: String,
-    val userId: String,
-    val nickname: String,
+    val roomCode: String,   // = inviteCode(초대코드)
+    val chatRoomId: Long    // = 폴링/채팅용 ID
 )

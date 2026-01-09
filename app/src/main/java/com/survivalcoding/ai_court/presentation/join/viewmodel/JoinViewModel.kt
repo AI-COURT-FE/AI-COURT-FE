@@ -33,8 +33,10 @@ class JoinViewModel @Inject constructor(
 
             when (val res = roomRepository.joinRoom(roomCode, nickname)) {
                 is Resource.Success -> {
-                    _events.emit(JoinUiEvent.NavigateToChat(roomCode))
+                    val chatRoomIdString = res.data.roomCode   // joinRoom()이 반환한 Room의 roomCode = chatRoomId.toString() 구조였음
+                    _events.emit(JoinUiEvent.NavigateToChat(chatRoomIdString))
                 }
+
                 is Resource.Error -> {
                     val msg = res.message ?: "입장에 실패했어요."
 
