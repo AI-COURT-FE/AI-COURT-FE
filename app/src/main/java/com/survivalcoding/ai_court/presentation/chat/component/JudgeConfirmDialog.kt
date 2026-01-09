@@ -1,5 +1,6 @@
 package com.survivalcoding.ai_court.presentation.chat.component
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -113,7 +114,10 @@ private fun DialogContent(
                 text = "확인",
                 background = Color(0xFF7B5A3C),
                 textColor = Color.White,
-                onClick = onConfirm,
+                onClick =  {
+                    Log.d("VERDICT", "clicked: request button")
+                    onConfirm()
+                },
                 modifier = Modifier.weight(1f)
             )
         }

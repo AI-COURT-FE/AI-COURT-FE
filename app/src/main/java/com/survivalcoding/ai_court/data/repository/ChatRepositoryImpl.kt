@@ -2,6 +2,7 @@ package com.survivalcoding.ai_court.data.repository
 
 import com.survivalcoding.ai_court.core.util.Resource
 import com.survivalcoding.ai_court.data.api.RoomApiService
+import com.survivalcoding.ai_court.data.model.request.ExitDecisionRequestDto
 import com.survivalcoding.ai_court.data.model.request.SendMessageRequestDto
 import com.survivalcoding.ai_court.data.model.response.ChatMessageDto
 import com.survivalcoding.ai_court.data.model.response.FinalJudgementResponseDto
@@ -46,14 +47,16 @@ class ChatRepositoryImpl @Inject constructor(
 
     private var currentRoomCode: String? = null
     private var currentChatRoomId: Long? = null
-    private var currentUserId: Long? = null
+
+    private var currentUserId: String? = null
     private var currentUserNickname: String? = null
+
 
     override fun connectToRoom(roomCode: String, userId: String, myNickname: String) {
         scope.launch {
             try {
                 currentRoomCode = roomCode
-                currentUserId = userId.toLongOrNull()
+                currentUserId = userId
                 currentUserNickname = myNickname
 
                 // roomCode가 chatRoomId(숫자)라고 가정
@@ -131,7 +134,8 @@ class ChatRepositoryImpl @Inject constructor(
 
                                     if (myScore != null) {
                                         val opponentKey = percentMap.keys.firstOrNull { it != me }
-                                        val opponentScore = opponentKey?.let { percentMap[it] } ?: (100 - myScore)
+                                        val opponentScore =
+                                            opponentKey?.let { percentMap[it] } ?: (100 - myScore)
 
                                         // userB = 나, userA = 상대 (너 WinRateHeader가 이렇게 쓰는지에 맞춰)
                                         _winRate.value = WinRate(
@@ -141,13 +145,15 @@ class ChatRepositoryImpl @Inject constructor(
                                     } else {
                                         // 아직 상대가 없거나, 내 닉네임이 percent에 안 잡힐 때
                                         val first = percentMap.values.firstOrNull() ?: 50
-                                        val second = percentMap.values.drop(1).firstOrNull() ?: (100 - first)
+                                        val second =
+                                            percentMap.values.drop(1).firstOrNull() ?: (100 - first)
                                         _winRate.value = WinRate(first, second)
                                     }
                                 }
 
                             } else {
-                                _error.value = "Poll failed: ${response.message ?: "code=${response.code}"}"
+                                _error.value =
+                                    "Poll failed: ${response.message ?: "code=${response.code}"}"
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -222,13 +228,10 @@ class ChatRepositoryImpl @Inject constructor(
         return try {
             val response = roomApiService.requestExit(
                 chatRoomId = chatRoomId,
-                user = emptyMap() // 세션 기반 인증이라면 빈 맵
+                user = buildUserQuery()   // ✅ emptyMap() -> buildUserQuery()
             )
-            if (response.success) {
-                Resource.Success(Unit)
-            } else {
-                Resource.Error(response.message ?: "Failed to request exit")
-            }
+            if (response.success) Resource.Success(Unit)
+            else Resource.Error(response.message ?: "Failed to request exit")
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Unknown error")
         }
@@ -246,6 +249,7 @@ class ChatRepositoryImpl @Inject constructor(
             Resource.Error(e.message ?: "판결문 조회 중 오류 발생")
         }
     }
+
     private fun ChatMessageDto.toDomain(myNickname: String): ChatMessage {
         val timestamp = runCatching {
             val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
@@ -267,4 +271,40 @@ class ChatRepositoryImpl @Inject constructor(
 
     override fun observeOpponentNickname(): Flow<String?> = _opponentNickname.asStateFlow()
 
+    private fun buildUserQuery(): Map<String, String> {
+        val uid = currentUserId ?: ""
+        val nick = currentUserNickname ?: ""
+        return mapOf(
+            "userId" to uid,
+            "nickname" to nick
+        )
+    }
+
+    override suspend fun approveExit(chatRoomId: Long): Resource<Unit> {
+        return try {
+            val response = roomApiService.decideExit(
+                chatRoomId = chatRoomId,
+                user = buildUserQuery(),
+                body = ExitDecisionRequestDto(approve = true)
+            )
+            if (response.success) Resource.Success(Unit)
+            else Resource.Error(response.message ?: "Failed to approve exit")
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Unknown error")
+        }
+    }
+
+    override suspend fun rejectExit(chatRoomId: Long): Resource<Unit> {
+        return try {
+            val response = roomApiService.decideExit(
+                chatRoomId = chatRoomId,
+                user = buildUserQuery(),
+                body = ExitDecisionRequestDto(approve = false)
+            )
+            if (response.success) Resource.Success(Unit)
+            else Resource.Error(response.message ?: "Failed to reject exit")
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Unknown error")
+        }
+    }
 }

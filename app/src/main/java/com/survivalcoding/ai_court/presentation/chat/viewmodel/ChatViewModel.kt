@@ -227,4 +227,34 @@ class ChatViewModel @Inject constructor(
             _uiState.update { it.copy(isConnected = true) }
         }
     }
+
+    fun requestExit() {
+        android.util.Log.d("VERDICT", "VM requestExit() CALLED")
+
+        val roomCode = currentRoomCode ?: run {
+            android.util.Log.d("VERDICT", "VM requestExit() STOP: currentRoomCode null")
+            return
+        }
+
+        val chatRoomId = roomCode.replace("-", "").toLongOrNull() ?: run {
+            android.util.Log.d("VERDICT", "VM requestExit() STOP: chatRoomId parse fail, roomCode=$roomCode")
+            return
+        }
+
+        android.util.Log.d("VERDICT", "VM requestExit() chatRoomId=$chatRoomId")
+
+        viewModelScope.launch {
+            android.util.Log.d("VERDICT", "VM requestExit() launching repository...")
+
+            val result = chatRepository.requestExit(chatRoomId)
+
+            android.util.Log.d("VERDICT", "VM requestExit() repository result=$result")
+
+            if (result is Resource.Error) {
+                _uiState.update { it.copy(errorMessage = result.message) }
+            } else {
+                _uiState.update { it.copy(showVerdictDialog = false) }
+            }
+        }
+    }
 }
