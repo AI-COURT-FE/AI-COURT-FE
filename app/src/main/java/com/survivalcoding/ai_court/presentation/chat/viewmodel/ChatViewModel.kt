@@ -71,6 +71,31 @@ class ChatViewModel @Inject constructor(
         }
 
         // ChatRoomStatus observe
+//        viewModelScope.launch {
+//            chatRepository.observeChatRoomStatus()
+//                .catch { e ->
+//                    e.printStackTrace()
+//                    _uiState.update { it.copy(errorMessage = "Failed to receive chat room status: ${e.message}") }
+//                }
+//                .collect { status ->
+//                    _uiState.update { cur ->
+//                        val shouldShowApprovalDialog =
+//                            cur.finishRequestNickname != null &&
+//                                    cur.finishRequestNickname != cur.myNickname &&
+//                                    status == ChatRoomStatus.REQUEST_FINISH
+//
+//                        cur.copy(
+//                            chatRoomStatus = status,
+//                            showFinishApprovalDialog = shouldShowApprovalDialog
+//                        )
+//                    }
+//
+//                    // DONE 상태일 때 판결문 자동 요청(원하면 유지/삭제 선택)
+//                    if (status == ChatRoomStatus.DONE) {
+//                        loadVerdict()
+//                    }
+//                }
+//        }
         viewModelScope.launch {
             chatRepository.observeChatRoomStatus()
                 .catch { e ->
@@ -78,35 +103,39 @@ class ChatViewModel @Inject constructor(
                     _uiState.update { it.copy(errorMessage = "Failed to receive chat room status: ${e.message}") }
                 }
                 .collect { status ->
-                    _uiState.update { it.copy(chatRoomStatus = status) }
+                    _uiState.update { cur ->
+                        val shouldShowApprovalDialog =
+                            cur.finishRequestNickname != null &&
+                                    cur.finishRequestNickname != cur.myNickname &&
+                                    status == ChatRoomStatus.REQUEST_FINISH
 
-                    // DONE 상태일 때 판결문 자동 요청
-                    if (status == ChatRoomStatus.DONE) {
-                        loadVerdict()
+                        cur.copy(
+                            chatRoomStatus = status,
+                            showFinishApprovalDialog = shouldShowApprovalDialog
+                        )
                     }
                 }
         }
 
-        // FinishRequestNickname observe - 종료 승인 모달 표시 로직
+        // FinishRequestNickname observe
         viewModelScope.launch {
             chatRepository.observeFinishRequestNickname()
-                .catch { e ->
-                    e.printStackTrace()
-                }
+                .catch { e -> e.printStackTrace() }
                 .collect { finishRequestNickname ->
-                    _uiState.update { currentState ->
-                        // finishRequestNickname이 있고, 내 닉네임이 아닌 경우에만 승인 모달 표시
-                        val shouldShowApprovalDialog = finishRequestNickname != null &&
-                                finishRequestNickname != currentState.myNickname &&
-                                currentState.chatRoomStatus == ChatRoomStatus.REQUEST_FINISH
+                    _uiState.update { cur ->
+                        val shouldShowApprovalDialog =
+                            finishRequestNickname != null &&
+                                    finishRequestNickname != cur.myNickname &&
+                                    cur.chatRoomStatus == ChatRoomStatus.REQUEST_FINISH
 
-                        currentState.copy(
+                        cur.copy(
                             finishRequestNickname = finishRequestNickname,
                             showFinishApprovalDialog = shouldShowApprovalDialog
                         )
                     }
                 }
         }
+
         viewModelScope.launch {
             chatRepository.observeOpponentNickname()
                 .catch { it.printStackTrace() }
@@ -263,11 +292,11 @@ class ChatViewModel @Inject constructor(
         val chatRoomId = roomCode.replace("-", "").toLongOrNull() ?: return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(showFinishApprovalDialog = false) }
             val result = chatRepository.approveExit(chatRoomId)
             if (result is Resource.Error) {
                 _uiState.update { it.copy(errorMessage = result.message) }
             }
+            _uiState.update { it.copy(showFinishApprovalDialog = false) }
         }
     }
 
@@ -276,11 +305,11 @@ class ChatViewModel @Inject constructor(
         val chatRoomId = roomCode.replace("-", "").toLongOrNull() ?: return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(showFinishApprovalDialog = false) }
             val result = chatRepository.rejectExit(chatRoomId)
             if (result is Resource.Error) {
                 _uiState.update { it.copy(errorMessage = result.message) }
             }
+            _uiState.update { it.copy(showFinishApprovalDialog = false) }
         }
     }
 

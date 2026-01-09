@@ -99,10 +99,16 @@ fun CourtNavGraph(
             ChatScreen(
                 roomCode = roomCode,
                 myUserId = generatedUserId,
-                myNickname = nickname,           // 중요 (nickname= 말고 myNickname=)
+                myNickname = nickname,
                 onNavigateBack = {
                     navController.navigate(Route.Entry.route) {
                         popUpTo(Route.Entry.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToVerdict = { chatRoomId ->
+                    navController.navigate("verdict/$chatRoomId") {
+                        popUpTo(Route.Chat.route) { inclusive = true }
                         launchSingleTop = true
                     }
                 }

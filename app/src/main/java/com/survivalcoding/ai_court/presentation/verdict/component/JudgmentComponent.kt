@@ -213,10 +213,14 @@ fun AutoResizeText(
 
         Text(
             text = text,
+            modifier = modifier.fillMaxWidth(),
             maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
             softWrap = false,
-            style = style.copy(fontSize = fontSize),
+            style = style.copy(
+                fontSize = fontSize,
+                textAlign = TextAlign.Center
+            ),
             onTextLayout = { result ->
                 // 텍스트가 잘리면 폰트 줄이기
                 if (result.didOverflowWidth && fontSize > minFontSize) {
